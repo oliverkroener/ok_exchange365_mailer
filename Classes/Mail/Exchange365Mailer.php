@@ -21,7 +21,9 @@ use Microsoft\Graph\Generated\Models\ItemBody;
 use Microsoft\Graph\Generated\Models\Message;
 use Microsoft\Graph\Generated\Models\Recipient;
 use GuzzleHttp\Client;
+use Microsoft\Graph\Generated\Models\FileAttachment;
 use RuntimeException;
+use GuzzleHttp\Psr7\Utils;
 
 use Symfony\Component\Mime\Email;
 
@@ -174,7 +176,24 @@ class Exchange365Mailer implements MailerInterface
             $replyTo->setEmailAddress($replyToEmail);
         }
 
+        // Process attachments
+        $fileAttachments = [];
+        $attachments = $message->getAllAttachmentParts();
+        foreach ($attachments as $attachment) {
+            $attachmentName = $attachment->getFilename();
+            $attachmentContentType = $attachment->getContentType(); // Retrieves the content type
+            $attachmentContent = $attachment->getContent(); // Retrieves the attachment content
+        
+            $fileAttachment = new FileAttachment();
+            $fileAttachment->setName($attachmentName);
+            $fileAttachment->setContentType($attachmentContentType);
 
+            // Assuming your content is stored in $content
+            $stream = Utils::streamFor(base64_encode($attachmentContent));
+            $fileAttachment->setContentBytes($stream);
+
+            $fileAttachments[] = $fileAttachment;
+        }
         // Construct the message object
         $graphMessage = new Message();
         $graphMessage->setFrom($from);
@@ -182,6 +201,8 @@ class Exchange365Mailer implements MailerInterface
         // $graphMessage->setReplyTo($replyTo);
         $graphMessage->setSubject($message->getSubject() ?? 'No Subject');
         $graphMessage->setBody($body);
+        $graphMessage->setAttachments($fileAttachments);
+
         // Set the "To" recipients
 
         // Set the attachments
