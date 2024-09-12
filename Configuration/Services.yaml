@@ -4,14 +4,8 @@ services:
     autoconfigure: true
     public: false
 
-  # Register your custom mailer service
-  OliverKroener\OkExchange365\Mail\Exchange365Mailer:
-    tags: [ 'mailer' ]
-
   # Set an alias for the TYPO3 MailerInterface to use your custom mailer
   TYPO3\CMS\Core\Mail\MailerInterface:
    alias: OliverKroener\OkExchange365\Mail\Exchange365Mailer
    public: true
 
-#  TYPO3\CMS\Core\Mail\MailerInterface:
-#    alias: OliverKroener\OkExchange365\Mail\Exchange365Mailer

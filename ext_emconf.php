@@ -15,4 +15,5 @@ $EM_CONF[$_EXTKEY] = [
         'conflicts' => [],
         'suggests' => [],
     ],
+    'icon' => 'EXT:ok_exchange365_mailer/Public/Icons/Extension.svg',
 ];

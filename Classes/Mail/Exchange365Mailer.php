@@ -2,30 +2,24 @@
 
 namespace OliverKroener\OkExchange365\Mail;
 
-use TYPO3\CMS\Core\Mail\MailMessage;
-use TYPO3\CMS\Core\Mail\MailerInterface;
-use Symfony\Component\Mime\RawMessage;
-use Symfony\Component\Mailer\Envelope;
-use Symfony\Component\Mailer\SentMessage;
-use Symfony\Component\Mime\MessageParser;
-use Symfony\Component\Mailer\Transport\TransportInterface;
-use Microsoft\Graph\Graph;
-use Microsoft\Graph\GraphServiceClient;
-use Microsoft\Kiota\Abstractions\ApiException;
-use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
-use Microsoft\Graph\Generated\Users\Item\SendMail\SendMailPostRequestBody;
+// Sorted imports
+use GuzzleHttp\Psr7\Utils;
 use Microsoft\Graph\Generated\Models\BodyType;
 use Microsoft\Graph\Generated\Models\EmailAddress;
-use Microsoft\Graph\Generated\Users\Item\SendMail\SendMailRequestBuilder;
+use Microsoft\Graph\Generated\Models\FileAttachment;
 use Microsoft\Graph\Generated\Models\ItemBody;
 use Microsoft\Graph\Generated\Models\Message;
 use Microsoft\Graph\Generated\Models\Recipient;
-use GuzzleHttp\Client;
-use Microsoft\Graph\Generated\Models\FileAttachment;
+use Microsoft\Graph\Generated\Users\Item\SendMail\SendMailPostRequestBody;
+use Microsoft\Kiota\Abstractions\ApiException;
+use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
+use Microsoft\Graph\GraphServiceClient;
 use RuntimeException;
-use GuzzleHttp\Psr7\Utils;
-
-use Symfony\Component\Mime\Email;
+use Symfony\Component\Mailer\Envelope;
+use Symfony\Component\Mailer\SentMessage;
+use Symfony\Component\Mailer\Transport\TransportInterface;
+use Symfony\Component\Mime\RawMessage;
+use TYPO3\CMS\Core\Mail\MailerInterface;
 
 class Exchange365Mailer implements MailerInterface
 {
@@ -37,6 +31,9 @@ class Exchange365Mailer implements MailerInterface
     protected $sentMessage;
     protected $transport;
 
+    /**
+     * Constructor to initialize the Exchange 365 Mailer with the configuration settings.
+     */
     public function __construct()
     {
         $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'];
@@ -48,17 +45,24 @@ class Exchange365Mailer implements MailerInterface
         $this->fromEmail = $conf['fromEmail'];
     }
 
+    /**
+     * Sends the email using Microsoft Graph API.
+     *
+     * @param RawMessage $message The email message to be sent.
+     * @param Envelope|null $envelope The envelope configuration, if any.
+     * @throws RuntimeException If sending fails.
+     */
     public function send(RawMessage $message, ?Envelope $envelope = null): void
     {
-        $tokenRequestContext = new ClientCredentialContext(
-            $this->tenantId,
-            $this->clientId,
-            $this->clientSecret
-        );
-
-        $graphServiceClient = new GraphServiceClient($tokenRequestContext);
-
         try {
+            $tokenRequestContext = new ClientCredentialContext(
+                $this->tenantId,
+                $this->clientId,
+                $this->clientSecret
+            );
+    
+            $graphServiceClient = new GraphServiceClient($tokenRequestContext);
+
             // Convert to Microsoft Graph message format
             $graphMessage = $this->convertToGraphMessage($message);
 
@@ -69,8 +73,6 @@ class Exchange365Mailer implements MailerInterface
             $filename = "../messages/" . date("Y-m-d_H:i:s") . "-message.txt";
 
             // Open the file for writing ('w' mode)
-            // The 'w' mode opens the file for writing only; it places the file pointer at the beginning of the file
-            // and truncates the file to zero length. If the file does not exist, it attempts to create it.
             $fileHandle = fopen($filename, 'w');
 
             if ($fileHandle) {
@@ -85,35 +87,48 @@ class Exchange365Mailer implements MailerInterface
                 echo "Failed to open the file for writing.";
             }
 
-            // Create SendMailRequestBuilder to send the email
+            // Send the email using Microsoft Graph API
             $graphServiceClient->users()->byUserId($this->fromEmail)->sendMail()->post($requestBody)->wait();
 
-            $t = 1;
-            //->sendMail()->post($requestBody)->wait();    
-        } catch (\Exception $e) {
+        } catch (ApiException $e) {
             throw new RuntimeException('Failed to send email: ' . $e->getMessage(), 0, $e);
         }
     }
 
+    /**
+     * Gets the last sent message.
+     *
+     * @return SentMessage|null The sent message or null if none was sent.
+     */
     public function getSentMessage(): ?SentMessage
     {
         return $this->sentMessage;
     }
 
+    /**
+     * Gets the current transport interface.
+     *
+     * @return TransportInterface The transport interface in use.
+     */
     public function getTransport(): TransportInterface
     {
         return $this->transport;
     }
 
+    /**
+     * Gets the real transport interface.
+     *
+     * @return TransportInterface The real transport interface.
+     */
     public function getRealTransport(): TransportInterface
     {
-        return $this->transport; // Assuming you are using the same transport; customize if necessary
+        return $this->transport; // Customize if a different transport is used
     }
 
     /**
-     * Converts parsed email data into a Microsoft Graph-compatible message object.
+     * Converts a parsed email data into a Microsoft Graph-compatible message object.
      *
-     * @param RawMessage $rawMessage
+     * @param RawMessage $rawMessage The raw message to convert.
      * @return Message Microsoft Graph-compatible message.
      */
     function convertToGraphMessage(RawMessage $rawMessage): Message
@@ -148,41 +163,13 @@ class Exchange365Mailer implements MailerInterface
             $body->setContent(''); // Default empty content if none provided
         }
 
-        // Create the attachments array
-        /*$attachmentsArray = [];
-        foreach ($attachments as $attachment) {
-            $fileAttachment = new FileAttachment();
-            $fileAttachment->setName($attachment['name']);
-            $fileAttachment->setContentBytes(base64_encode($attachment['content']));
-            $attachmentsArray[] = $fileAttachment;
-        }*/
-
-        // set the "From" address to sender
-        $from = new Recipient();
-        $fromEmail = new EmailAddress();
-        $fromEmail->setAddress($this->fromEmail); // Use the parsed 'From' header or a default value
-        $from->setEmailAddress($fromEmail);
-
-        // Set the "ReplyTo" address to sender of the email
-        $replyToFromSender = $message->getHeader('From');
-        $replyToFromSenderParts = $replyToFromSender->getAllParts();
-        if ($replyToFromSender->getValue() !== '') {
-            $replyTo = new Recipient();
-            $replyToEmail = new EmailAddress();
-            $replyToEmail->setAddress($replyToFromSenderParts[0]->getValue());
-            if ($replyToFromSender->getName() !== null) {
-                $replyToEmail->setName($replyToFromSenderParts[0]->getName());
-            }
-            $replyTo->setEmailAddress($replyToEmail);
-        }
-
         // Process attachments
         $fileAttachments = [];
         $attachments = $message->getAllAttachmentParts();
         foreach ($attachments as $attachment) {
             $attachmentName = $attachment->getFilename();
-            $attachmentContentType = $attachment->getContentType(); // Retrieves the content type
-            $attachmentContent = $attachment->getContent(); // Retrieves the attachment content
+            $attachmentContentType = $attachment->getContentType();
+            $attachmentContent = $attachment->getContent();
         
             $fileAttachment = new FileAttachment();
             $fileAttachment->setName($attachmentName);
@@ -194,44 +181,21 @@ class Exchange365Mailer implements MailerInterface
 
             $fileAttachments[] = $fileAttachment;
         }
+
+        // Set the "From" address
+        $from = new Recipient();
+        $fromEmail = new EmailAddress();
+        $fromEmail->setAddress($this->fromEmail); // Use the parsed 'From' header or a default value
+        $from->setEmailAddress($fromEmail);
+
         // Construct the message object
         $graphMessage = new Message();
         $graphMessage->setFrom($from);
         $graphMessage->setToRecipients($toRecipientsArray);
-        // $graphMessage->setReplyTo($replyTo);
         $graphMessage->setSubject($message->getSubject() ?? 'No Subject');
         $graphMessage->setBody($body);
         $graphMessage->setAttachments($fileAttachments);
 
-        // Set the "To" recipients
-
-        // Set the attachments
-        // $message->setAttachments($attachmentsArray);
-
         return $graphMessage;
-    }
-
-    /**
-     * Parses an email address string into display name and address components.
-     *
-     * @param string $email The email string in the format 'Name <email@domain.com>'.
-     * @return array An associative array with 'name' and 'address'.
-     */
-    function parseEmailAddress($email)
-    {
-        // Use regex to extract the name and email address
-        if (preg_match('/^(.*)<(.*)>$/', $email, $matches)) {
-            $name = trim($matches[1]);
-            $address = trim($matches[2]);
-        } else {
-            // If no name is provided, just use the email address
-            $name = null;
-            $address = trim($email);
-        }
-
-        return [
-            'name' => $name,
-            'address' => $address,
-        ];
     }
 }
