@@ -1,0 +1,27 @@
+{
+    "name": "oliverkroener/ok-exchange365-mailer",
+    "description": "A TYPO3 extension for sending emails using Exchange 365 and Microsoft Graph API",
+    "type": "typo3-cms-extension",
+    "license": "GPL-2.0-or-later",
+    "version": "1.0.0",
+    "authors": [
+        {
+            "name": "Oliver Kröner",
+            "email": "ok@oliver-kroener.de"
+        }
+    ],
+    "require": {
+        "microsoft/microsoft-graph": "^2",
+        "zbateson/mail-mime-parser": "^3"
+    },
+    "autoload": {
+        "psr-4": {
+            "OliverKroener\\OkExchange365\\": "Classes/"
+        }
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "ok_exchange365_mailer"
+        }
+    }
+}

@@ -1,0 +1,14 @@
+# cat=Exchange365 Mailer Settings; type=string; label=Tenant ID: OAuth2 Tenant ID for connecting to Exchange365
+plugin.tx_okexchange365mailer.settings.exchange365.tenantId = your-tenant-id
+
+# cat=Exchange365 Mailer Settings; type=string; label=Client ID: OAuth2 Client ID for connecting to Exchange365
+plugin.tx_okexchange365mailer.settings.exchange365.clientId = your-client-id
+
+# cat=Exchange365 Mailer Settings; type=string; label=Secret ID: OAuth2 Client Secret ID for connecting to Exchange365
+plugin.tx_okexchange365mailer.settings.exchange365.clientSecretId = your-client-secret
+
+# cat=Exchange365 Mailer Settings; type=string; label=Client Secret: OAuth2 Client Secret for connecting to Exchange365
+plugin.tx_okexchange365mailer.settings.exchange365.clientSecret = your-client-secret
+
+# cat=Exchange365 Mailer Settings; type=string; label=FromEmail: The Email used to send from Exchange365
+plugin.tx_okexchange365mailer.settings.exchange365.fromEmail = sender-email

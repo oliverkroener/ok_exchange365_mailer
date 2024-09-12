@@ -1,0 +1,12 @@
+# Map TypoScript constants to settings for Exchange365 Mailer
+plugin.tx_okexchange365mailer {
+  settings {
+    exchange365 {
+      tenantId = {$plugin.tx_okexchange365mailer.settings.exchange365.tenantId}
+      clientId = {$plugin.tx_okexchange365mailer.settings.exchange365.clientId}
+      clientSecretId = {$plugin.tx_okexchange365mailer.settings.exchange365.clientSecretId}
+      clientSecret = {$plugin.tx_okexchange365mailer.settings.exchange365.clientSecret}
+      fromEmail = {$plugin.tx_okexchange365mailer.settings.exchange365.fromEmail}
+    }
+  }
+}
