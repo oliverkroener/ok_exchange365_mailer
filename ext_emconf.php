@@ -6,14 +6,13 @@ $EM_CONF[$_EXTKEY] = [
     'category' => 'plugin',
     'author' => 'Oliver Kroener',
     'author_email' => 'ok@oliver-kroener.de',
-    'state' => 'beta',
-    'version' => '0.9.0',
+    'state' => 'stable',
+    'version' => '2.0.0',
     'constraints' => [
         'depends' => [
             'typo3' => '12.0.0-12.4.99',
         ],
         'conflicts' => [],
         'suggests' => [],
-    ],
-    'icon' => 'EXT:ok_exchange365_mailer/Public/Icons/Extension.svg',
+    ]
 ];

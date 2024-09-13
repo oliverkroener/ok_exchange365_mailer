@@ -4,6 +4,10 @@ services:
     autoconfigure: true
     public: false
 
+  # Autoload all services
+  OliverKroener\OkExchange365\:
+    resource: "../Classes/*"
+    
   # Register your custom mailer service
   OliverKroener\OkExchange365\Mail\Exchange365Mailer:
     tags: [ 'mailer' ]

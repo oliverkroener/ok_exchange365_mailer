@@ -20,14 +20,11 @@ use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\TransportInterface;
 use Symfony\Component\Mime\RawMessage;
 use TYPO3\CMS\Core\Mail\MailerInterface;
+use OliverKroener\OkExchange365\Service\MSGraphMailApiService;
+
 
 class Exchange365Mailer implements MailerInterface
 {
-    protected string $tenantId;
-    protected string $clientId;
-    protected string $clientSecretId;
-    protected string $clientSecret;
-    protected string $fromEmail;
     protected $sentMessage;
     protected $transport;
 
@@ -36,13 +33,6 @@ class Exchange365Mailer implements MailerInterface
      */
     public function __construct()
     {
-        $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'];
-
-        $this->tenantId = $conf['tenantId'];
-        $this->clientId = $conf['clientId'];
-        $this->clientSecretId = $conf['clientSecretId'];
-        $this->clientSecret = $conf['clientSecret'];
-        $this->fromEmail = $conf['fromEmail'];
     }
 
     /**
@@ -55,40 +45,26 @@ class Exchange365Mailer implements MailerInterface
     public function send(RawMessage $message, ?Envelope $envelope = null): void
     {
         try {
+            $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'];
+
+            $confFromEmail = $conf['fromEmail'];
+            
             $tokenRequestContext = new ClientCredentialContext(
-                $this->tenantId,
-                $this->clientId,
-                $this->clientSecret
+                $conf['tenantId'],
+                $conf['clientId'],
+                $conf['clientSecret']
             );
     
             $graphServiceClient = new GraphServiceClient($tokenRequestContext);
 
             // Convert to Microsoft Graph message format
-            $graphMessage = $this->convertToGraphMessage($message);
-
+            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message, $confFromEmail);
+                            
             $requestBody = new SendMailPostRequestBody();
             $requestBody->setMessage($graphMessage);
 
-            // Generate the filename using the current date and time
-            $filename = "../messages/" . date("Y-m-d_H:i:s") . "-message.txt";
-
-            // Open the file for writing ('w' mode)
-            $fileHandle = fopen($filename, 'w');
-
-            if ($fileHandle) {
-                // Write the content to the file
-                fwrite($fileHandle, $message->toString());
-
-                // Close the file
-                fclose($fileHandle);
-
-                echo "Message written successfully to $filename";
-            } else {
-                echo "Failed to open the file for writing.";
-            }
-
             // Send the email using Microsoft Graph API
-            $graphServiceClient->users()->byUserId($this->fromEmail)->sendMail()->post($requestBody)->wait();
+            $graphServiceClient->users()->byUserId($confFromEmail)->sendMail()->post($requestBody)->wait();
 
         } catch (ApiException $e) {
             throw new RuntimeException('Failed to send email: ' . $e->getMessage(), 0, $e);
@@ -125,77 +101,4 @@ class Exchange365Mailer implements MailerInterface
         return $this->transport; // Customize if a different transport is used
     }
 
-    /**
-     * Converts a parsed email data into a Microsoft Graph-compatible message object.
-     *
-     * @param RawMessage $rawMessage The raw message to convert.
-     * @return Message Microsoft Graph-compatible message.
-     */
-    function convertToGraphMessage(RawMessage $rawMessage): Message
-    {
-        // Create an Email object from the parsed MimeMessage
-        $message = \ZBateson\MailMimeParser\Message::from($rawMessage->toString(), false);
-
-        $toRecipients = $message->getHeader('To');
-
-        foreach ($toRecipients->getAllParts() as $email) {
-            $recipient = new Recipient();
-            $emailAddress = new EmailAddress();
-            $emailAddress->setAddress($email->getValue());
-            $emailAddress->setName($email->getName());
-            $recipient->setEmailAddress($emailAddress);
-            $toRecipientsArray[] = $recipient;
-        }
-
-        $htmlBody = $message->getHtmlContent();
-        $plainTextBody = $message->getTextContent();
-
-        // Create the body content
-        $body = new ItemBody();
-        if (!empty($htmlBody)) {
-            $body->setContentType(new BodyType(BodyType::HTML));
-            $body->setContent($htmlBody);
-        } elseif (!empty($plainTextBody)) {
-            $body->setContentType(new BodyType(BodyType::TEXT));
-            $body->setContent($plainTextBody);
-        } else {
-            $body->setContentType(new BodyType(BodyType::TEXT));
-            $body->setContent(''); // Default empty content if none provided
-        }
-
-        // Process attachments
-        $fileAttachments = [];
-        $attachments = $message->getAllAttachmentParts();
-        foreach ($attachments as $attachment) {
-            $attachmentName = $attachment->getFilename();
-            $attachmentContentType = $attachment->getContentType();
-            $attachmentContent = $attachment->getContent();
-        
-            $fileAttachment = new FileAttachment();
-            $fileAttachment->setName($attachmentName);
-            $fileAttachment->setContentType($attachmentContentType);
-
-            // Assuming your content is stored in $content
-            $stream = Utils::streamFor(base64_encode($attachmentContent));
-            $fileAttachment->setContentBytes($stream);
-
-            $fileAttachments[] = $fileAttachment;
-        }
-
-        // Set the "From" address
-        $from = new Recipient();
-        $fromEmail = new EmailAddress();
-        $fromEmail->setAddress($this->fromEmail); // Use the parsed 'From' header or a default value
-        $from->setEmailAddress($fromEmail);
-
-        // Construct the message object
-        $graphMessage = new Message();
-        $graphMessage->setFrom($from);
-        $graphMessage->setToRecipients($toRecipientsArray);
-        $graphMessage->setSubject($message->getSubject() ?? 'No Subject');
-        $graphMessage->setBody($body);
-        $graphMessage->setAttachments($fileAttachments);
-
-        return $graphMessage;
-    }
 }
