@@ -2,14 +2,6 @@
 
 namespace OliverKroener\OkExchange365\Mail;
 
-// Sorted imports
-use GuzzleHttp\Psr7\Utils;
-use Microsoft\Graph\Generated\Models\BodyType;
-use Microsoft\Graph\Generated\Models\EmailAddress;
-use Microsoft\Graph\Generated\Models\FileAttachment;
-use Microsoft\Graph\Generated\Models\ItemBody;
-use Microsoft\Graph\Generated\Models\Message;
-use Microsoft\Graph\Generated\Models\Recipient;
 use Microsoft\Graph\Generated\Users\Item\SendMail\SendMailPostRequestBody;
 use Microsoft\Kiota\Abstractions\ApiException;
 use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
@@ -20,8 +12,7 @@ use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\TransportInterface;
 use Symfony\Component\Mime\RawMessage;
 use TYPO3\CMS\Core\Mail\MailerInterface;
-use OliverKroener\OkExchange365\Service\MSGraphMailApiService;
-
+use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
 
 class Exchange365Mailer implements MailerInterface
 {
