@@ -6,13 +6,20 @@ services:
 
   # Autoload all services
   OliverKroener\OkExchange365\:
-    resource: "../Classes/*"
-    
-  # Register your custom mailer service
-  OliverKroener\OkExchange365\Mail\Exchange365Mailer:
-    tags: [ 'mailer' ]
+    resource: '../Classes/*'
+    exclude: '../Classes/Mail/Transport/Exchange365Transport.php'
 
-  # Set an alias for the TYPO3 MailerInterface to use your custom mailer
-  TYPO3\CMS\Core\Mail\MailerInterface:
-   alias: OliverKroener\OkExchange365\Mail\Exchange365Mailer
-   public: true
+# Register your custom mailer service
+ # OliverKroener\OkExchange365\Mail\Transport\Exchange365Transport:
+ #   args:
+ #     $mailSettings:
+ #   calls:
+ #     - method: 'setEventDispatcher'
+ #       arguments:
+ #         - '@event_dispatcher'
+ #   public: true     
+  #  tags:
+  #    - { name: 'mailer.transport', alias: 'exchange365api' }
+  #  public: true
+
+

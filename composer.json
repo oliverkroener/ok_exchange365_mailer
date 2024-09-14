@@ -12,8 +12,7 @@
     ],
     "require": {
         "typo3/cms-core": "^12.4",
-        "microsoft/microsoft-graph": "^2",
-        "zbateson/mail-mime-parser": "^3"
+        "microsoft/microsoft-graph": "^2"
     },
     "autoload": {
         "psr-4": {
