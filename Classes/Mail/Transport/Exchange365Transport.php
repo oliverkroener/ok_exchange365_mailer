@@ -3,20 +3,13 @@
 namespace OliverKroener\OkExchange365\Mail\Transport;
 
 use Exception;
-use Microsoft\Graph\Users\Item\SendMail\SendMailPostRequestBody;
 use Microsoft\Graph\Graph;
-use Microsoft\Kiota\Abstractions\ApiException;
-use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
-use Microsoft\Graph\GraphServiceClient;
 use RuntimeException;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\SentMessage;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Transport\TransportInterface;
 use Symfony\Component\Mime\RawMessage;
 use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
-use Psr\Log\LoggerInterface;
-use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Log\LogManager;
 
@@ -27,8 +20,6 @@ class Exchange365Transport implements TransportInterface
 
     public function  __construct(array $mailSettings)
     {
-        $this->dispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
-
         // Initialize the logger using TYPO3's logging system
         $this->logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
     }
@@ -104,28 +95,8 @@ class Exchange365Transport implements TransportInterface
         return $this->sentMessage;
     }
 
-    /**
-     * Gets the current transport interface.
-     *
-     * @return TransportInterface The transport interface in use.
-     */
-    public function getTransport(): TransportInterface
-    {
-        return $this->transport;
-    }
-
-    /**
-     * Gets the real transport interface.
-     *
-     * @return TransportInterface The real transport interface.
-     */
-    public function getRealTransport(): TransportInterface
-    {
-        return $this->transport; // Customize if a different transport is used
-    }
-
     public function __toString(): string
     {
-        return 'exchange365api';
+        return 'exchange365mailer';
     }
 }
