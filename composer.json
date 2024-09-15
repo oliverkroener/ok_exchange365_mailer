@@ -3,15 +3,16 @@
     "description": "A TYPO3 extension for sending emails using Exchange 365 and Microsoft Graph API",
     "type": "typo3-cms-extension",
     "license": "GPL-2.0-or-later",
-    "version": "2.0.0",
+    "version": "4.0.0",
     "authors": [
         {
-            "name": "Oliver Kröner",
+            "name": "Oliver Kroener",
             "email": "ok@oliver-kroener.de"
         }
     ],
     "require": {
         "typo3/cms-core": "^12.4",
+        "oliverkroener/ok_typo3_helper": "^3",
         "microsoft/microsoft-graph": "^2"
     },
     "autoload": {
