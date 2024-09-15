@@ -11,7 +11,7 @@
         }
     ],
     "require": {
-        "typo3/cms-core": "^12.4 || ^13",
+        "typo3/cms-core": "^12.4 || ^13 || dev-main",
         "oliverkroener/ok-typo3-helper": "^3",
         "microsoft/microsoft-graph": "^2"
     },
