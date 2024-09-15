@@ -12,7 +12,7 @@
     ],
     "require": {
         "typo3/cms-core": "^12.4",
-        "oliverkroener/ok_typo3_helper": "^3",
+        "oliverkroener/ok-typo3-helper": "^3",
         "microsoft/microsoft-graph": "^2"
     },
     "autoload": {
