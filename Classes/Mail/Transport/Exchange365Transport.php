@@ -3,7 +3,8 @@
 namespace OliverKroener\OkExchange365\Mail\Transport;
 
 use Exception;
-use Microsoft\Graph\Generated\Users\Item\SendMail\SendMailPostRequestBody;
+use Microsoft\Graph\Users\Item\SendMail\SendMailPostRequestBody;
+use Microsoft\Graph\Graph;
 use Microsoft\Kiota\Abstractions\ApiException;
 use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
 use Microsoft\Graph\GraphServiceClient;
@@ -22,8 +23,7 @@ use TYPO3\CMS\Core\Log\LogManager;
 class Exchange365Transport implements TransportInterface
 {
     private $sentMessage;
-    private ?EventDispatcherInterface $dispatcher;
-    private LoggerInterface $logger;
+    private $logger;
 
     public function  __construct(array $mailSettings)
     {
@@ -46,23 +46,37 @@ class Exchange365Transport implements TransportInterface
             $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'];
 
             $confFromEmail = $conf['fromEmail'];
+            $saveSentEmail = $conf['saveSentEmail'] ?? 0;
 
-            $tokenRequestContext = new ClientCredentialContext(
-                $conf['tenantId'],
-                $conf['clientId'],
-                $conf['clientSecret']
-            );
+            $guzzle = new \GuzzleHttp\Client();
+            $url = 'https://login.microsoftonline.com/' . $conf['tenantId'] . '/oauth2/token?api-version=1.0';
+            $token = json_decode($guzzle->post($url, [
+                'form_params' => [
+                    'client_id' => $conf['clientId'],
+                    'client_secret' => $conf['clientSecret'],
+                    'resource' => 'https://graph.microsoft.com/',
+                    'grant_type' => 'client_credentials',
+                ],
+            ])->getBody()->getContents());
 
-            $graphServiceClient = new GraphServiceClient($tokenRequestContext);
+            $accessToken = $token->access_token;
+
+            $graph = new Graph();
+            $graph->setAccessToken($accessToken);
 
             // Convert to Microsoft Graph message format
             $graphMessage = MSGraphMailApiService::convertToGraphMessage($message, $confFromEmail);
 
-            $requestBody = new SendMailPostRequestBody();
-            $requestBody->setMessage($graphMessage);
+            $sendMailPostRequestBody = [
+                'message' => json_decode(json_encode($graphMessage), true),
+                'saveToSentItems' => $saveSentEmail === 1 ? 'true' : 'false'
+            ];
 
             // Send the email using Microsoft Graph API
-            $graphServiceClient->users()->byUserId($confFromEmail)->sendMail()->post($requestBody)->wait();
+            $urlSuffix = '/users/' . urlencode($confFromEmail) . '/sendMail';
+            $graph->createRequest('POST', $urlSuffix)
+                        ->attachBody($sendMailPostRequestBody)
+                        ->execute();
 
         } catch (Exception $e) {
             $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed!');
