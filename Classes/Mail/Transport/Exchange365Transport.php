@@ -37,7 +37,7 @@ class Exchange365Transport implements TransportInterface
             $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'];
 
             $confFromEmail = $conf['fromEmail'];
-            $saveSentEmail = $conf['saveSentEmail'] ?? 0;
+            $saveSentEmail = $conf['saveSentEmails'] ?? 0;
 
             $guzzle = new \GuzzleHttp\Client();
             $url = 'https://login.microsoftonline.com/' . $conf['tenantId'] . '/oauth2/token?api-version=1.0';
@@ -56,11 +56,11 @@ class Exchange365Transport implements TransportInterface
             $graph->setAccessToken($accessToken);
 
             // Convert to Microsoft Graph message format
-            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message, $confFromEmail);
+            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message->toString(), $confFromEmail);
 
             $sendMailPostRequestBody = [
                 'message' => json_decode(json_encode($graphMessage), true),
-                'saveToSentItems' => $saveSentEmail === 1 ? 'true' : 'false'
+                'saveToSentItems' => $saveSentEmail == 1 ? 'true' : 'false'
             ];
 
             // Send the email using Microsoft Graph API
