@@ -4,21 +4,18 @@ namespace OliverKroener\OkExchange365\Mail\Transport;
 
 use Exception;
 use Microsoft\Graph\Graph;
-use RuntimeException;
-use Symfony\Component\Mailer\Envelope;
-use Symfony\Component\Mailer\SentMessage;
-use Symfony\Component\Mailer\Transport\TransportInterface;
-use Symfony\Component\Mime\RawMessage;
-use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
+use Swift_Transport;
+use Swift_Events_EventListener;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Log\LogManager;
+use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
 
-class Exchange365Transport implements TransportInterface
+class Exchange365Transport implements Swift_Transport
 {
-    private $sentMessage;
     private $logger;
+    private $started = false; // Track whether the transport is started
 
-    public function  __construct(array $mailSettings)
+    public function __construct(array $mailSettings)
     {
         // Initialize the logger using TYPO3's logging system
         $this->logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
@@ -27,17 +24,22 @@ class Exchange365Transport implements TransportInterface
     /**
      * Sends the email using Microsoft Graph API.
      *
-     * @param RawMessage $message The email message to be sent.
-     * @param Envelope|null $envelope The envelope configuration, if any.
-     * @throws RuntimeException If sending fails.
+     * @param \Swift_Mime_Message $message The message to send
+     * @param string[] &$failedRecipients To collect failures by-reference, nothing will fail in our debugging case
+     * @return int
+     * @throws \RuntimeException
      */
-    public function send(RawMessage $message, ?Envelope $envelope = null): ?SentMessage
+    public function send(\Swift_Mime_Message $message, &$failedRecipients = null)
     {
+        if (!$this->isStarted()) {
+            $this->start();
+        }
+
         try {
             $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'];
 
             $confFromEmail = $conf['fromEmail'];
-            $saveSentEmail = $conf['saveSentEmail'] ?? 0;
+            $saveSentEmails = $conf['saveSentEmails'] ?? 0;
 
             $guzzle = new \GuzzleHttp\Client();
             $url = 'https://login.microsoftonline.com/' . $conf['tenantId'] . '/oauth2/token?api-version=1.0';
@@ -56,43 +58,64 @@ class Exchange365Transport implements TransportInterface
             $graph->setAccessToken($accessToken);
 
             // Convert to Microsoft Graph message format
-            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message, $confFromEmail);
+            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message->toString(), $confFromEmail);
 
             $sendMailPostRequestBody = [
                 'message' => json_decode(json_encode($graphMessage), true),
-                'saveToSentItems' => $saveSentEmail === 1 ? 'true' : 'false'
+                'saveToSentItems' => $saveSentEmails == 1 ? 'true' : 'false'
             ];
 
             // Send the email using Microsoft Graph API
             $urlSuffix = '/users/' . urlencode($confFromEmail) . '/sendMail';
             $graph->createRequest('POST', $urlSuffix)
-                        ->attachBody($sendMailPostRequestBody)
-                        ->execute();
+                  ->attachBody($sendMailPostRequestBody)
+                  ->execute();
+
+            $this->logger->debug('Mail sent successfully with ' . self::class);
+
+            return count($message->getTo()); // Return the number of recipients
 
         } catch (Exception $e) {
-            $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed!');
-            return null;
+            $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed: ' . $e->getMessage());
+            $failedRecipients[] = $confFromEmail;
+            return 0;
         }
-
-        $this->logger->debug('Mail sent successfully with ' . self::class);
-
-        if (!$envelope) {
-            $sentMessage = null;
-        } else {
-            $sentMessage = new SentMessage($message, $envelope);
-        }
-
-        return $sentMessage;
     }
 
     /**
-     * Gets the last sent message.
+     * Check if the transport is started.
      *
-     * @return SentMessage|null The sent message or null if none was sent.
+     * @return bool True if started, false otherwise.
      */
-    public function getSentMessage(): ?SentMessage
+    public function isStarted()
     {
-        return $this->sentMessage;
+        return $this->started;
+    }
+
+    /**
+     * Start the transport.
+     */
+    public function start()
+    {
+        $this->started = true;
+    }
+
+    /**
+     * Stop the transport.
+     */
+    public function stop()
+    {
+        $this->started = false;
+    }
+
+    /**
+     * Register a plugin.
+     *
+     * @param Swift_Events_EventListener $plugin The plugin to register.
+     */
+    public function registerPlugin(Swift_Events_EventListener $plugin)
+    {
+        // This method is required for Swift_Transport interface, but you may choose not to implement any specific functionality.
     }
 
     public function __toString(): string
