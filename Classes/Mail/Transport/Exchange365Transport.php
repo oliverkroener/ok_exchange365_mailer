@@ -16,10 +16,12 @@ use TYPO3\CMS\Core\Log\LogManager;
 class Exchange365Transport implements TransportInterface
 {
     private $sentMessage;
+    private $mailSettings;
     private $logger;
 
     public function  __construct(array $mailSettings)
     {
+        $this->mailSettings = $mailSettings;
         // Initialize the logger using TYPO3's logging system
         $this->logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
     }
@@ -34,10 +36,20 @@ class Exchange365Transport implements TransportInterface
     public function send(RawMessage $message, ?Envelope $envelope = null): ?SentMessage
     {
         try {
-            $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'];
+            $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
 
-            $confFromEmail = $conf['fromEmail'];
-            $saveSentEmail = $conf['saveSentEmails'] ?? 0;
+            // check if is not in frontend
+            if (!$conf) {
+                // get variables from globals
+                $conf = [];
+                $conf['tenantId'] = $this->mailSettings['transport_exchange365_tenantId'] ?? '';
+                $conf['clientId'] = $this->mailSettings['transport_exchange365_clientId'] ?? '';
+                $conf['clientSecret'] = $this->mailSettings['transport_exchange365_clientSecret'] ?? '';
+                $conf['fromEmail'] = $this->mailSettings['transport_exchange365_fromEmail'] ?? '';
+                $conf['saveToSentItems'] = $this->mailSettings['transport_exchange365_saveToSentItems'] ?? '';
+            }
+            $confFromEmail = $conf['fromEmail'] ?? '';
+            $saveToSentItems = $conf['saveToSentItems'] ?? 0;
 
             $guzzle = new \GuzzleHttp\Client();
             $url = 'https://login.microsoftonline.com/' . $conf['tenantId'] . '/oauth2/token?api-version=1.0';
@@ -60,7 +72,7 @@ class Exchange365Transport implements TransportInterface
 
             $sendMailPostRequestBody = [
                 'message' => json_decode(json_encode($graphMessage), true),
-                'saveToSentItems' => $saveSentEmail == 1 ? 'true' : 'false'
+                'saveToSentItems' => $saveToSentItems == 1 ? 'true' : 'false'
             ];
 
             // Send the email using Microsoft Graph API
