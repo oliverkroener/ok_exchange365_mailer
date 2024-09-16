@@ -45,7 +45,12 @@ class Exchange365Transport implements Swift_Transport
 
             // If configuration not found, try to get from mail settings
             if (empty($conf)) {
-                $conf = $this->mailSettings['transport_exchange365'] ?? null;
+                $conf = [];
+                $conf['tenantId'] = $this->mailSettings['transport_exchange365_tenantId'] ?? '';
+                $conf['clientId'] = $this->mailSettings['transport_exchange365_clientId'] ?? '';
+                $conf['clientSecret'] = $this->mailSettings['transport_exchange365_clientSecret'] ?? '';
+                $conf['fromEmail'] = $this->mailSettings['transport_exchange365_fromEmail'] ?? '';
+                $conf['saveToSentItems'] = $this->mailSettings['transport_exchange365_saveToSentItems'] ?? '';
             }
 
             if (empty($conf)) {
@@ -97,8 +102,7 @@ class Exchange365Transport implements Swift_Transport
 
         } catch (Exception $e) {
             $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed: ' . $e->getMessage());
-            $failedRecipients[] = $confFromEmail;
-            return 0;
+            throw new \RuntimeException('Sending mail from ' . $confFromEmail . ' failed: ' . $e->getMessage());
         }
     }
 
