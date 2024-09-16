@@ -13,10 +13,12 @@ use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
 class Exchange365Transport implements Swift_Transport
 {
     private $logger;
+    private $mailSettings;
     private $started = false; // Track whether the transport is started
 
     public function __construct(array $mailSettings)
     {
+        $this->mailSettings = $mailSettings;
         // Initialize the logger using TYPO3's logging system
         $this->logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
     }
@@ -25,7 +27,7 @@ class Exchange365Transport implements Swift_Transport
      * Sends the email using Microsoft Graph API.
      *
      * @param \Swift_Mime_Message $message The message to send
-     * @param string[] &$failedRecipients To collect failures by-reference, nothing will fail in our debugging case
+     * @param string[] &$failedRecipients To collect failures by-reference
      * @return int
      * @throws \RuntimeException
      */
@@ -36,21 +38,39 @@ class Exchange365Transport implements Swift_Transport
         }
 
         try {
-            $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'];
+            // Attempt to get configuration from TypoScript if in frontend context
+            if (isset($GLOBALS['TSFE'])) {
+                $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
+            }
 
-            $confFromEmail = $conf['fromEmail'];
-            $saveSentEmails = $conf['saveSentEmails'] ?? 0;
+            // If configuration not found, try to get from mail settings
+            if (empty($conf)) {
+                $conf = $this->mailSettings['transport_exchange365'] ?? null;
+            }
+
+            if (empty($conf)) {
+                throw new \RuntimeException('Exchange365 mail configuration not found.');
+            }
+
+            $confFromEmail = $conf['fromEmail'] ?? '';
+            $saveToSentItems = $conf['saveToSentItems'] ?? 0;
 
             $guzzle = new \GuzzleHttp\Client();
             $url = 'https://login.microsoftonline.com/' . $conf['tenantId'] . '/oauth2/token?api-version=1.0';
-            $token = json_decode($guzzle->post($url, [
+            $tokenResponse = $guzzle->post($url, [
                 'form_params' => [
                     'client_id' => $conf['clientId'],
                     'client_secret' => $conf['clientSecret'],
                     'resource' => 'https://graph.microsoft.com/',
                     'grant_type' => 'client_credentials',
                 ],
-            ])->getBody()->getContents());
+            ]);
+
+            $token = json_decode($tokenResponse->getBody()->getContents());
+
+            if (!isset($token->access_token)) {
+                throw new \RuntimeException('Failed to obtain access token.');
+            }
 
             $accessToken = $token->access_token;
 
@@ -62,7 +82,7 @@ class Exchange365Transport implements Swift_Transport
 
             $sendMailPostRequestBody = [
                 'message' => json_decode(json_encode($graphMessage), true),
-                'saveToSentItems' => $saveSentEmails == 1 ? 'true' : 'false'
+                'saveToSentItems' => $saveToSentItems == 1 ? 'true' : 'false',
             ];
 
             // Send the email using Microsoft Graph API
@@ -71,9 +91,9 @@ class Exchange365Transport implements Swift_Transport
                   ->attachBody($sendMailPostRequestBody)
                   ->execute();
 
-            $this->logger->debug('Mail sent successfully with ' . self::class);
+            $this->logger->debug('Mail sent successfully with ' . __CLASS__);
 
-            return count($message->getTo()); // Return the number of recipients
+            return count((array) $message->getTo()); // Return the number of recipients
 
         } catch (Exception $e) {
             $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed: ' . $e->getMessage());
@@ -115,7 +135,7 @@ class Exchange365Transport implements Swift_Transport
      */
     public function registerPlugin(Swift_Events_EventListener $plugin)
     {
-        // This method is required for Swift_Transport interface, but you may choose not to implement any specific functionality.
+        // This method is required by the Swift_Transport interface but can remain empty if not needed.
     }
 
     public function __toString(): string
