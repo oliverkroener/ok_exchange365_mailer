@@ -42,16 +42,15 @@ class Exchange365Transport implements TransportInterface
             $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
 
             // check if is not in frontend
-            if (!$conf) {
+            if (empty($conf)) {
                 // get variables from globals
                 $conf = [];
                 $conf['tenantId'] = $this->mailSettings['transport_exchange365_tenantId'] ?? '';
                 $conf['clientId'] = $this->mailSettings['transport_exchange365_clientId'] ?? '';
                 $conf['clientSecret'] = $this->mailSettings['transport_exchange365_clientSecret'] ?? '';
-                $conf['fromEmail'] = $this->mailSettings['transport_exchange365_fromEmail'] ?? '';
                 $conf['saveToSentItems'] = $this->mailSettings['transport_exchange365_saveToSentItems'] ?? '';
             }
-            $confFromEmail = $conf['fromEmail'] ?? '';
+
             $saveToSentItems = $conf['saveToSentItems'] ?? 0;
 
             $tokenRequestContext = new ClientCredentialContext(
@@ -63,10 +62,12 @@ class Exchange365Transport implements TransportInterface
             $graphServiceClient = new GraphServiceClient($tokenRequestContext);
 
             // Convert to Microsoft Graph message format
-            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message, $confFromEmail);
+            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message);
 
+            $confFromEmail = $graphMessage['from'];
+            
             $requestBody = new SendMailPostRequestBody();
-            $requestBody->setMessage($graphMessage);
+            $requestBody->setMessage($graphMessage['message']);
             $requestBody->setSaveToSentItems($saveToSentItems);
 
             // Send the email using Microsoft Graph API
@@ -74,7 +75,7 @@ class Exchange365Transport implements TransportInterface
 
         } catch (Exception $e) {
             $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed!');
-            throw new RuntimeException("Sending mail with Exchange365 mailer failed. Please check credentials setup.");
+            throw new RuntimeException("Sending mail with Exchange365 mailer failed. Please check credentials setup." . $e->getTraceAsString());
         }
 
         $this->logger->debug('Mail sent successfully with ' . self::class);
