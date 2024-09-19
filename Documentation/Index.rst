@@ -1,5 +1,36 @@
-Table of Contents
-=================
+..  _start:
+
+===========
+News system
+===========
+
+:Extension key:
+   news
+
+:Package name:
+   georgringer/news
+
+:Version:
+   |release|
+
+:Language:
+   en
+
+:Author:
+   Georg Ringer & Contributors
+
+:License:
+   This document is published under the
+   `Open Publication License <https://www.opencontent.org/openpub/>`__.
+
+:Rendered:
+   |today
+
+----
+----
+
+
+
 
 `Documentation 1 <#documentation>`__
 
