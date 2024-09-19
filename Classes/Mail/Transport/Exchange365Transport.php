@@ -48,6 +48,10 @@ class Exchange365Transport implements TransportInterface
                 $conf['saveToSentItems'] = $this->mailSettings['transport_exchange365_saveToSentItems'] ?? '';
             }
 
+            if (empty($conf)) {
+                throw new \RuntimeException('Exchange365 mail configuration not found.');
+            }
+
             $saveToSentItems = $conf['saveToSentItems'] ?? 0;
 
             $guzzle = new \GuzzleHttp\Client();
