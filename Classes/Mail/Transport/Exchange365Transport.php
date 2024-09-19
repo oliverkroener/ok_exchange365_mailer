@@ -39,16 +39,15 @@ class Exchange365Transport implements TransportInterface
             $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
 
             // check if is not in frontend
-            if (!$conf) {
+            if (empty($conf)) {
                 // get variables from globals
                 $conf = [];
                 $conf['tenantId'] = $this->mailSettings['transport_exchange365_tenantId'] ?? '';
                 $conf['clientId'] = $this->mailSettings['transport_exchange365_clientId'] ?? '';
                 $conf['clientSecret'] = $this->mailSettings['transport_exchange365_clientSecret'] ?? '';
-                $conf['fromEmail'] = $this->mailSettings['transport_exchange365_fromEmail'] ?? '';
                 $conf['saveToSentItems'] = $this->mailSettings['transport_exchange365_saveToSentItems'] ?? '';
             }
-            $confFromEmail = $conf['fromEmail'] ?? '';
+
             $saveToSentItems = $conf['saveToSentItems'] ?? 0;
 
             $guzzle = new \GuzzleHttp\Client();
@@ -68,10 +67,12 @@ class Exchange365Transport implements TransportInterface
             $graph->setAccessToken($accessToken);
 
             // Convert to Microsoft Graph message format
-            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message->toString(), $confFromEmail);
+            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message);
+
+            $confFromEmail = $graphMessage['from'];
 
             $sendMailPostRequestBody = [
-                'message' => json_decode(json_encode($graphMessage), true),
+                'message' => json_decode(json_encode($graphMessage['message']), true),
                 'saveToSentItems' => $saveToSentItems == 1 ? 'true' : 'false'
             ];
 
@@ -83,7 +84,7 @@ class Exchange365Transport implements TransportInterface
 
         } catch (Exception $e) {
             $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed!');
-            return null;
+            throw new RuntimeException("Sending mail with Exchange365 mailer failed. Please check credentials setup." . $e->getMessage());
         }
 
         $this->logger->debug('Mail sent successfully with ' . self::class);
