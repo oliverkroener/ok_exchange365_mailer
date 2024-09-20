@@ -33,10 +33,6 @@ class Exchange365Transport implements Swift_Transport
      */
     public function send(\Swift_Mime_Message $message, &$failedRecipients = null)
     {
-        if (!$this->isStarted()) {
-            $this->start();
-        }
-
         try {
             // Attempt to get configuration from TypoScript if in frontend context
             if (isset($GLOBALS['TSFE'])) {
@@ -57,7 +53,6 @@ class Exchange365Transport implements Swift_Transport
                 throw new \RuntimeException('Exchange365 mail configuration not found.');
             }
 
-            $confFromEmail = $conf['fromEmail'] ?? '';
             $saveToSentItems = $conf['saveToSentItems'] ?? 0;
 
             $guzzle = new \GuzzleHttp\Client();
@@ -83,11 +78,13 @@ class Exchange365Transport implements Swift_Transport
             $graph->setAccessToken($accessToken);
 
             // Convert to Microsoft Graph message format
-            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message->toString(), $confFromEmail);
+            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message);
+
+            $confFromEmail = $graphMessage['from'];
 
             $sendMailPostRequestBody = [
-                'message' => json_decode(json_encode($graphMessage), true),
-                'saveToSentItems' => $saveToSentItems == 1 ? 'true' : 'false',
+                'message' => json_decode(json_encode($graphMessage['message']), true),
+                'saveToSentItems' => $saveToSentItems == 1 ? 'true' : 'false'
             ];
 
             // Send the email using Microsoft Graph API
