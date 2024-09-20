@@ -5,7 +5,6 @@ plugin.tx_okexchange365mailer {
       tenantId = {$plugin.tx_okexchange365mailer.settings.exchange365.tenantId}
       clientId = {$plugin.tx_okexchange365mailer.settings.exchange365.clientId}
       clientSecret = {$plugin.tx_okexchange365mailer.settings.exchange365.clientSecret}
-      fromEmail = {$plugin.tx_okexchange365mailer.settings.exchange365.fromEmail}
       saveToSentItems = {$plugin.tx_okexchange365mailer.settings.exchange365.saveToSentItems}
     }
   }

@@ -39,16 +39,23 @@ class Exchange365Transport implements TransportInterface
     public function send(RawMessage $message, ?Envelope $envelope = null): ?SentMessage
     {
         try {
-            $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
+            // Attempt to get configuration from TypoScript if in frontend context
+            if (isset($GLOBALS['TSFE'])) {
+                $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
+            }
 
-            // check if is not in frontend
+            // If configuration not found, try to get from mail settings
             if (empty($conf)) {
-                // get variables from globals
                 $conf = [];
                 $conf['tenantId'] = $this->mailSettings['transport_exchange365_tenantId'] ?? '';
                 $conf['clientId'] = $this->mailSettings['transport_exchange365_clientId'] ?? '';
                 $conf['clientSecret'] = $this->mailSettings['transport_exchange365_clientSecret'] ?? '';
+                $conf['fromEmail'] = $this->mailSettings['transport_exchange365_fromEmail'] ?? '';
                 $conf['saveToSentItems'] = $this->mailSettings['transport_exchange365_saveToSentItems'] ?? '';
+            }
+
+            if (empty($conf)) {
+                throw new \RuntimeException('Exchange365 mail configuration not found.');
             }
 
             $saveToSentItems = $conf['saveToSentItems'] ?? 0;
