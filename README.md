@@ -1,6 +1,6 @@
 # Exchange365 Mailer extension
 
-Extension for Typo3 to enable mails with Exchange 365 without enabling SMTP.
+Extension for Typo3 to enable mails with Exchange 365 without enabling SMTP by using the MS-Graph API.
 
 ## **Enabling Microsoft Exchange 365 Mail Integration for TYPO3 Without SMTP**
 
