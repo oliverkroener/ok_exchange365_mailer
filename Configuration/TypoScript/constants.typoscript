@@ -14,4 +14,4 @@ plugin.tx_okexchange365mailer.settings.exchange365.clientSecret = your-client-se
 plugin.tx_okexchange365mailer.settings.exchange365.fromEmail = sender-email
 
 # cat=exchange365mailer/cEmail/e1; type=select[0,1]; label=Save sent Emails: The Emails are saved to the Sent Folder if enabled
-plugin.tx_okexchange365mailer.settings.exchange365.saveSentEmails = 1
+plugin.tx_okexchange365mailer.settings.exchange365.saveToSentItems = 1
