@@ -1,102 +1,11 @@
-..  _start:
-
-===========
-News system
-===========
-
-:Extension key:
-   news
-
-:Package name:
-   georgringer/news
-
-:Version:
-   |release|
-
-:Language:
-   en
-
-:Author:
-   Georg Ringer & Contributors
-
-:License:
-   This document is published under the
-   `Open Publication License <https://www.opencontent.org/openpub/>`__.
-
-:Rendered:
-   |today
-
-----
-----
-
-
-
-
-`Documentation 1 <#documentation>`__
-
-`Table of Contents 1 <#table-of-contents-1>`__
-
-`Introduction 2 <#introduction>`__
-
-`Features 2 <#features>`__
-
-`Requirements 2 <#requirements>`__
-
-`Installation 2 <#installation>`__
-
-`Step 1: Install via Composer 2 <#step-1-install-via-composer>`__
-
-`Step 2: Activate the Extension 2 <#step-2-activate-the-extension>`__
-
-`Configuration 3 <#configuration>`__
-
-`Step 1: Register an Application in Azure Portal
-3 <#step-1-register-an-application-in-azure-portal>`__
-
-`Step 2: Configure API Permissions
-3 <#step-2-configure-api-permissions>`__
-
-`Step 3: Create a Client Secret 3 <#step-3-create-a-client-secret>`__
-
-`Step 4: Configure the Extension in TYPO3
-3 <#step-4-configure-the-extension-in-typo3>`__
-
-`Step 5: Authenticate with Microsoft Graph API
-4 <#step-5-authenticate-with-microsoft-graph-api>`__
-
-`Usage 4 <#usage>`__
-
-`Testing Email Sending 4 <#testing-email-sending>`__
-
-`Troubleshooting 4 <#troubleshooting>`__
-
-`Common Issues 4 <#common-issues>`__
-
-`Checking Logs 4 <#checking-logs>`__
-
-`Support 5 <#support>`__
-
-`License 5 <#license>`__
-
-`Author and Support 5 <#author-and-support>`__
+.. include:: Includes.rst.txt
 
 Documentation
 =============
 
-.. _table-of-contents-1:
-
-Table of Contents
------------------
-
-1. `Introduction <#introduction>`__
-2. `Features <#features>`__
-3. `Requirements <#requirements>`__
-4. `Installation <#installation>`__
-5. `Configuration <#configuration>`__
-6. `Usage <#usage>`__
-7. `Troubleshooting <#troubleshooting>`__
-8. `License <#license>`__
-9. `Author and Support <#author-and-support>`__
+.. contents:: Table of Contents
+   :depth: 2
+   :local:
 
 Introduction
 ------------
@@ -128,32 +37,24 @@ Requirements
 -  **Composer**: For installation via Composer.
 -  **Dependencies**:
 
-   -  `oliverkroener/ok-typo3-helper <https://packagist.org/packages/oliverkroener/ok-typo3-helper>`__:
+   -  oliverkroener/ok-typo3-helper https://packagist.org/packages/oliverkroener/ok-typo3-helper
       Version ^2.
-   -  `microsoft/microsoft-graph <https://github.com/microsoftgraph/msgraph-sdk-php>`__:
+   -  microsoft/microsoft-graph https://github.com/microsoftgraph/msgraph-sdk-php
       Version ^2.
 
 Installation
 ------------
 
-Step 1: Install via Composer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install via Composer
+~~~~~~~~~~~~~~~~~~~~
 
 Run the following command in your TYPO3 project root directory:
 
-::
-
+.. code-block:: bash
+   
    composer require oliverkroener/ok-exchange365-mailer
 
 This will install the extension along with its dependencies.
-
-Step 2: Activate the Extension
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-1. Log in to your TYPO3 backend.
-2. Navigate to **Extensions** module.
-3. Find **ok_exchange365_mailer** in the list.
-4. Click the activate icon to enable the extension.
 
 Configuration
 -------------
@@ -162,16 +63,13 @@ To configure the extension to send emails via Exchange 365, follow these
 steps:
 
 Step 1: Register an Application in Azure Portal
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. **Log in** to the `Azure Portal <https://portal.azure.com/>`__.
-2. Navigate to **Azure Active Directory** > **App registrations**.
+1. **Log in** to the `Azure Portal <https://portal.azure.com/>.
+2. Navigate to **Azure Active Directory** **App registrations**.
 3. Click **New registration**.
 4. **Name** your application (e.g., “TYPO3 Mailer”).
 5. Set **Supported account types** as per your requirements.
-6. Under **Redirect URI**, select **Web** and enter a URI (e.g.,
-   ``https://yourdomain.com/typo3conf/ext/ok_exchange365_mailer/Authentication/OAuth2Callback``).
-7. Click **Register**.
+6. Click **Register**.
 
 Step 2: Configure API Permissions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -180,7 +78,7 @@ Step 2: Configure API Permissions
 2. Click **Add a permission**.
 3. Select **Microsoft Graph**.
 4. Choose **Application permissions**.
-5. Find and add **Mail.Send** permission.
+5. Find and add **Mail.Send**, **User.ReadBasic.All** permission.
 6. Click **Grant admin consent** to grant permissions.
 
 Step 3: Create a Client Secret
@@ -210,17 +108,32 @@ Step 4: Configure the Extension in TYPO3
       sender.
    -  **From Name**: The sender’s display name.
 
-4. Save the configuration.
+4. Adjust the configuration of GLOBALS:
+.. code-block:: language PHP
+   // additional.php or settings.php
+
+   $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport'] = 'OliverKroener\\OkExchange365\\Mail\\Transport\\Exchange365Transport'; // Use the custom transport
+
+   // Exchange365 specific configurations
+   $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_tenantId'] = 'tenant-id';
+   $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_clientId'] = 'client-id';
+   $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_clientSecret'] = 'client-secret';
+   $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_saveToSentItems'] = 1; // Use 1 or 0 as needed
+
+or .env
+..code-block::
+   TYPO3_CONF_VARS__MAIL__transport=OliverKroener\\OkExchange365\\Mail\\Transport\\Exchange365Transport # exchange365api # smtp
+
+   TYPO3_CONF_VARS__MAIL__transport_exchange365_tenantId='tenant-id'
+   TYPO3_CONF_VARS__MAIL__transport_exchange365_clientId='client-id'
+   TYPO3_CONF_VARS__MAIL__transport_exchange365_clientSecret='client-secret'
+   TYPO3_CONF_VARS__MAIL__transport_exchange365_saveToSentItems=0|1
 
 Step 5: Authenticate with Microsoft Graph API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. In TYPO3 backend, navigate to **Tools** > **ok_exchange365_mailer**
-   module (if available).
-2. Click on **Authenticate with Microsoft**.
-3. Follow the authentication flow to grant access.
-4. After successful authentication, the extension is ready to send
-   emails.
+   module (*coming soon ...*).
 
 Usage
 -----
@@ -280,8 +193,7 @@ If issues persist:
 License
 -------
 
-This extension is licensed under the `GNU General Public License v2.0 or
-later <https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>`__.
+This extension is licensed under the `GNU General Public License v2.0 <https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>`__.
 
 Author and Support
 ------------------
