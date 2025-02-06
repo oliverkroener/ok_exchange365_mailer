@@ -1,14 +1,13 @@
 ..  _start:
 
-===========
-News system
-===========
+Exchange 365 Mailer
+===================
 
 :Extension key:
-   news
+   ok_exchange365_mailer
 
 :Package name:
-   georgringer/news
+   oliverkroener/ok-exchange365-mailer
 
 :Version:
    |release|
@@ -17,86 +16,16 @@ News system
    en
 
 :Author:
-   Georg Ringer & Contributors
+   Oliver Kroener & Contributors
 
 :License:
    This document is published under the
    `Open Publication License <https://www.opencontent.org/openpub/>`__.
 
 :Rendered:
-   |today
-
-----
-----
-
-
-
-
-`Documentation 1 <#documentation>`__
-
-`Table of Contents 1 <#table-of-contents-1>`__
-
-`Introduction 2 <#introduction>`__
-
-`Features 2 <#features>`__
-
-`Requirements 2 <#requirements>`__
-
-`Installation 2 <#installation>`__
-
-`Step 1: Install via Composer 2 <#step-1-install-via-composer>`__
-
-`Step 2: Activate the Extension 2 <#step-2-activate-the-extension>`__
-
-`Configuration 3 <#configuration>`__
-
-`Step 1: Register an Application in Azure Portal
-3 <#step-1-register-an-application-in-azure-portal>`__
-
-`Step 2: Configure API Permissions
-3 <#step-2-configure-api-permissions>`__
-
-`Step 3: Create a Client Secret 3 <#step-3-create-a-client-secret>`__
-
-`Step 4: Configure the Extension in TYPO3
-3 <#step-4-configure-the-extension-in-typo3>`__
-
-`Step 5: Authenticate with Microsoft Graph API
-4 <#step-5-authenticate-with-microsoft-graph-api>`__
-
-`Usage 4 <#usage>`__
-
-`Testing Email Sending 4 <#testing-email-sending>`__
-
-`Troubleshooting 4 <#troubleshooting>`__
-
-`Common Issues 4 <#common-issues>`__
-
-`Checking Logs 4 <#checking-logs>`__
-
-`Support 5 <#support>`__
-
-`License 5 <#license>`__
-
-`Author and Support 5 <#author-and-support>`__
-
-Documentation
-=============
+   |today|
 
 .. _table-of-contents-1:
-
-Table of Contents
------------------
-
-1. `Introduction <#introduction>`__
-2. `Features <#features>`__
-3. `Requirements <#requirements>`__
-4. `Installation <#installation>`__
-5. `Configuration <#configuration>`__
-6. `Usage <#usage>`__
-7. `Troubleshooting <#troubleshooting>`__
-8. `License <#license>`__
-9. `Author and Support <#author-and-support>`__
 
 Introduction
 ------------
