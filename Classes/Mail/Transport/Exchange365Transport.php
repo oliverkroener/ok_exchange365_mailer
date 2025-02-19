@@ -6,37 +6,54 @@ use Exception;
 use Microsoft\Graph\Generated\Users\Item\SendMail\SendMailPostRequestBody;
 use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
 use Microsoft\Graph\GraphServiceClient;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Log\NullLogger;
 use RuntimeException;
+use Symfony\Component\EventDispatcher\LegacyEventDispatcherProxy;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\SentMessage;
+use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Component\Mailer\Transport\TransportInterface;
 use Symfony\Component\Mime\RawMessage;
 use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface as SymfonyEventDispatcherInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Log\LogManager;
 
-class Exchange365Transport implements TransportInterface
+class Exchange365Transport extends AbstractTransport
 {
     private array $mailSettings;
     private LoggerInterface $logger;
 
-    public function  __construct(array $mailSettings)
+    public function  __construct(array $mailSettings, ?EventDispatcherInterface $dispatcher = null, ?LoggerInterface $logger = null)
     {
-        $this->mailSettings = $mailSettings;
+        // get the dispatcher (normally in Classes/Mail/TransportFactory.php but not for custom transports)
+        // we need this to dispatch some events like onMEssage send etc.
+        if (class_exists('TYPO3\CMS\Core\Adapter\EventDispatcherAdapter')) {
+            $eventDispatcherAdapter = GeneralUtility::makeInstance(
+                \TYPO3\CMS\Core\Adapter\EventDispatcherAdapter::class
+            );
+        } else {
+            // TODO remove if support for TYPO3 11 dropped
+            $eventDispatcherAdapter = GeneralUtility::makeInstance(
+                \TYPO3\SymfonyPsrEventDispatcherAdapter\EventDispatcherAdapter::class
+            );
+        }
+        parent::__construct($dispatcher??$eventDispatcherAdapter);
 
         // Initialize the logger using TYPO3's logging system
         $this->logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
+        $this->mailSettings = $mailSettings;
     }
 
     /**
      * Sends the email using Microsoft Graph API.
      *
-     * @param RawMessage $message The email message to be sent.
-     * @param Envelope|null $envelope The envelope configuration, if any.
+     * @param SentMessage $message The email message to be sent.
      * @throws RuntimeException If sending fails.
      */
-    public function send(RawMessage $message, ?Envelope $envelope = null): ?SentMessage
+    protected function doSend(SentMessage $message): void
     {
         try {
             // Attempt to get configuration from TypoScript if in frontend context
@@ -69,10 +86,10 @@ class Exchange365Transport implements TransportInterface
             $graphServiceClient = new GraphServiceClient($tokenRequestContext);
 
             // Convert to Microsoft Graph message format
-            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message);
+            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message->getOriginalMessage());
 
             $confFromEmail = $graphMessage['from'];
-            
+
             $requestBody = new SendMailPostRequestBody();
             $requestBody->setMessage($graphMessage['message']);
             $requestBody->setSaveToSentItems($saveToSentItems);
@@ -93,9 +110,7 @@ class Exchange365Transport implements TransportInterface
             $sentMessage = new SentMessage($message, $envelope);
         }
 
-        return $sentMessage;
     }
-
     public function __toString(): string
     {
         return 'exchange365api';
