@@ -17,12 +17,10 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
 class Exchange365Transport extends AbstractTransport
-class Exchange365Transport extends AbstractTransport
 {
     private array $mailSettings;
     private LoggerInterface $logger;
 
-    public function  __construct(array $mailSettings, ?EventDispatcherInterface $dispatcher = null, ?LoggerInterface $logger = null)
     public function  __construct(array $mailSettings, ?EventDispatcherInterface $dispatcher = null, ?LoggerInterface $logger = null)
     {
         // get the dispatcher (normally in Classes/Mail/TransportFactory.php but not for custom transports)
@@ -52,7 +50,6 @@ class Exchange365Transport extends AbstractTransport
      * @param SentMessage $message The email message to be sent.
      * @throws RuntimeException If sending fails.
      */
-    protected function doSend(SentMessage $message): void
     protected function doSend(SentMessage $message): void
     {
         try {
@@ -103,7 +100,7 @@ class Exchange365Transport extends AbstractTransport
             $graphServiceClient = new GraphServiceClient($tokenRequestContext);
 
             // Convert to Microsoft Graph message format
-            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message->getOriginalMessage());
+            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message);
 
             $confFromEmail = $graphMessage['from'];
 
