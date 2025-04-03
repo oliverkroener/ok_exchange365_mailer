@@ -102,8 +102,7 @@ class Exchange365Transport extends AbstractTransport
             // Convert to Microsoft Graph message format
             $graphMessage = MSGraphMailApiService::convertToGraphMessage($message);
 
-            $confFromEmail = $graphMessage['from'];
-
+            $confFromEmail = $graphMessage['from'] ?? $conf['fromEmail'] ?? null;
 
             $requestBody = new SendMailPostRequestBody();
             $requestBody->setMessage($graphMessage['message']);
