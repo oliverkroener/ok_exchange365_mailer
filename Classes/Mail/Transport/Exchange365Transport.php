@@ -7,51 +7,72 @@ use Microsoft\Graph\Generated\Users\Item\SendMail\SendMailPostRequestBody;
 use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
 use Microsoft\Graph\GraphServiceClient;
 use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use ScssPhp\ScssPhp\Parser as ScssPhpParser;
-use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\SentMessage;
-use Symfony\Component\Mailer\Transport\TransportInterface;
-use Symfony\Component\Mime\RawMessage;
+use Symfony\Component\Mailer\Transport\AbstractTransport;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Symfony\Component\Mime\Email;
-use Symfony\Component\Mime\Message;
-use TYPO3\CMS\Core\Mail\FluidEmail;
-use Symfony\Component\Mime\Parser;
-use ZBateson\MailMimeParser\MailMimeParser;
-use OliverKroener\Helpers\Mail\Mime\MessageConverter;
+use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
-class Exchange365Transport implements TransportInterface
+class Exchange365Transport extends AbstractTransport
 {
     private array $mailSettings;
     private LoggerInterface $logger;
-    private RawMessage $message;
 
-    public function  __construct(array $mailSettings)
+    public function  __construct(array $mailSettings, ?EventDispatcherInterface $dispatcher = null, ?LoggerInterface $logger = null)
     {
-        $this->mailSettings = $mailSettings;
+        // get the dispatcher (normally in Classes/Mail/TransportFactory.php but not for custom transports)
+        // we need this to dispatch some events like onMEssage send etc.
+        if (class_exists('TYPO3\CMS\Core\Adapter\EventDispatcherAdapter')) {
+            $eventDispatcherAdapter = GeneralUtility::makeInstance(
+                \TYPO3\CMS\Core\Adapter\EventDispatcherAdapter::class
+            );
+        } else {
+            // TODO remove if support for TYPO3 11 dropped
+            $eventDispatcherAdapter = GeneralUtility::makeInstance(
+                \TYPO3\SymfonyPsrEventDispatcherAdapter\EventDispatcherAdapter::class
+            );
+        }
+        parent::__construct($dispatcher ?? $eventDispatcherAdapter);
 
         // Initialize the logger using TYPO3's logging system
         $this->logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
+        $this->mailSettings = $mailSettings;
     }
 
     /**
      * Sends the email using Microsoft Graph API.
      *
-     * @param RawMessage $message The email message to be sent.
-     * @param Envelope|null $envelope The envelope configuration, if any.
+     * @param SentMessage $message The email message to be sent.
      * @throws RuntimeException If sending fails.
      */
-    public function send(RawMessage $message, ?Envelope $envelope = null): ?SentMessage
+    protected function doSend(SentMessage $message): void
     {
         try {
             // Attempt to get configuration from TypoScript if in frontend context
-            if (isset($GLOBALS['TSFE'])) {
-                $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
-            }
+            $conf = null;
 
+            $request = $GLOBALS['TYPO3_REQUEST'];
+
+            // Check if frontend mode
+            if ($request?->getAttribute('applicationType') === 1) {
+
+                $currentVersion = VersionNumberUtility::getNumericTypo3Version();
+
+                if (version_compare($currentVersion, "12.4.1", ">=")) {
+
+                    $fullTypoScript = $request->getAttribute('frontend.typoscript')->getSetupArray();
+                    // TypoScript configuration retrieval is not required here
+                    $conf = $fullTypoScript['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
+
+                } else {
+
+                    $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
+
+                }
+            }
             // If configuration not found, try to get from mail settings
             if (empty($conf)) {
                 $conf = [];
@@ -68,11 +89,6 @@ class Exchange365Transport implements TransportInterface
 
             $saveToSentItems = $conf['saveToSentItems'] ?? 0;
 
-            // Check if message is coming from spooler or any other source that is not an Email Object
-            if (true) {
-                $message = MessageConverter::convertToEmail($message->toString());
-            }
-
             $tokenRequestContext = new ClientCredentialContext(
                 $conf['tenantId'],
                 $conf['clientId'],
@@ -81,33 +97,30 @@ class Exchange365Transport implements TransportInterface
 
             $graphServiceClient = new GraphServiceClient($tokenRequestContext);
 
+            // Convert to Microsoft Graph message format
             $graphMessage = MSGraphMailApiService::convertToGraphMessage($message);
 
             $confFromEmail = $graphMessage['from'];
-            
+
             $requestBody = new SendMailPostRequestBody();
             $requestBody->setMessage($graphMessage['message']);
             $requestBody->setSaveToSentItems($saveToSentItems);
 
             // Send the email using Microsoft Graph API
             $graphServiceClient->users()->byUserId($confFromEmail)->sendMail()->post($requestBody)->wait();
-
         } catch (Exception $e) {
-            $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed!');
+            $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed!' . PHP_EOL . $e->getMessage());
             throw new RuntimeException("Sending mail with Exchange365 mailer failed. Please check credentials setup." . $e->getTraceAsString());
         }
 
         $this->logger->debug('Mail sent successfully with ' . self::class);
-
-        if (!$envelope) {
-            $sentMessage = null;
-        } else {
-            $sentMessage = new SentMessage($message, $envelope);
-        }
-
-        return $sentMessage;
     }
 
+    /**
+     * Returns the name of the transport.
+     *
+     * @return string The transport name.
+     */
     public function __toString(): string
     {
         return 'exchange365api';

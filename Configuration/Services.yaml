@@ -9,5 +9,7 @@ services:
     resource: '../Classes/*'
     exclude: '../Classes/Mail/Transport/Exchange365Transport.php'
 
-
-
+  OliverKroener\OkExchange365\Lowlevel\EventListener\ModifyBlindedConfigurationOptionsEventListener:
+    tags:
+      - name: event.listener
+        identifier: 'ok-exchange365-mailer/blind-configuration-options'
