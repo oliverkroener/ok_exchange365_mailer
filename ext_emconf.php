@@ -7,10 +7,10 @@ $EM_CONF[$_EXTKEY] = [
     'author' => 'Oliver Kroener',
     'author_email' => 'ok@oliver-kroener.de',
     'state' => 'stable',
-    'version' => '4.0.0',
+    'version' => '4.0.1',
     'constraints' => [
         'depends' => [
-            'typo3' => '12.4.0-13.4.99',
+            'typo3' => '12.4.0-13.99.99',
         ],
         'conflicts' => [],
         'suggests' => [],
