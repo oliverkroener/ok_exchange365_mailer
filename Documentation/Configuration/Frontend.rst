@@ -45,7 +45,7 @@ The following 5 parameters must be configured in your TypoScript setup for front
 
     ..  code-block:: typoscript
 
-        config.mail.transport_exchange365_tenantId = your-tenant-id-here
+        plugin.tx_okexchange365mailer.settings.exchange365.tenantId = your-tenant-id-here
 
     ..  attention::
         Replace `your-tenant-id-here` with the actual Tenant ID from your :ref:`Azure Configuration <azure>` (step 4).
@@ -56,7 +56,7 @@ The following 5 parameters must be configured in your TypoScript setup for front
 
     ..  code-block:: typoscript
 
-        config.mail.transport_exchange365_clientId = your-client-id-here
+        plugin.tx_okexchange365mailer.settings.exchange365.clientId = your-client-id-here
 
     ..  attention::
         Replace `your-client-id-here` with the actual Client ID from your :ref:`Azure Configuration <azure>` (step 4).
@@ -67,7 +67,7 @@ The following 5 parameters must be configured in your TypoScript setup for front
 
     ..  code-block:: typoscript
 
-        config.mail.transport_exchange365_clientSecret = your-client-secret-here
+        plugin.tx_okexchange365mailer.settings.exchange365.clientSecret = your-client-secret-here
 
     ..  warning::
         - Replace `your-client-secret-here` with the actual Secret **Value** from your :ref:`Azure Configuration <azure>` (step 7)
@@ -80,7 +80,7 @@ The following 5 parameters must be configured in your TypoScript setup for front
 
     ..  code-block:: typoscript
 
-        config.mail.transport_exchange365_fromEmail = service@your-domain.com
+        plugin.tx_okexchange365mailer.settings.exchange365.fromEmail = service@your-domain.com
 
     ..  note::
         - Replace `service@your-domain.com` with a valid email address from your Exchange 365 environment
@@ -93,7 +93,7 @@ The following 5 parameters must be configured in your TypoScript setup for front
 
     ..  code-block:: typoscript
 
-        config.mail.transport_exchange365_saveToSentItems = 1
+        plugin.tx_okexchange365mailer.settings.exchange365.saveToSentItems = 1
 
     ..  note::
         - Set to `1` to save emails to Sent Items folder
@@ -113,18 +113,25 @@ Here's a complete TypoScript setup example for frontend email functionality:
             # Set transport to Exchange 365
             transport = OliverKroener\OkExchange365\Mail\Transport\Exchange365Transport
             
-            # Azure/Microsoft Entra ID Configuration
-            transport_exchange365_tenantId = your-tenant-id-here
-            transport_exchange365_clientId = your-client-id-here
-            transport_exchange365_clientSecret = your-client-secret-here
-            
-            # Email Configuration
-            transport_exchange365_fromEmail = service@your-domain.com
-            transport_exchange365_saveToSentItems = 1
-            
             # Optional: Default mail settings
             defaultMailFromAddress = service@your-domain.com
             defaultMailFromName = Your Organization Name
+        }
+    }
+
+    # Exchange 365 specific configuration
+    plugin.tx_okexchange365mailer {
+        settings {
+            exchange365 {
+                # Azure/Microsoft Entra ID Configuration
+                tenantId = your-tenant-id-here
+                clientId = your-client-id-here
+                clientSecret = your-client-secret-here
+                
+                # Email Configuration
+                fromEmail = service@your-domain.com
+                saveToSentItems = 1
+            }
         }
     }
 
@@ -204,13 +211,13 @@ Best Practices
    ..  code-block:: typoscript
    
        [applicationContext == "Development"]
-           config.mail.transport_exchange365_clientId = dev-client-id
-           config.mail.transport_exchange365_tenantId = dev-tenant-id
+           plugin.tx_okexchange365mailer.settings.exchange365.clientId = dev-client-id
+           plugin.tx_okexchange365mailer.settings.exchange365.tenantId = dev-tenant-id
        [END]
        
        [applicationContext == "Production"]
-           config.mail.transport_exchange365_clientId = prod-client-id
-           config.mail.transport_exchange365_tenantId = prod-tenant-id
+           plugin.tx_okexchange365mailer.settings.exchange365.clientId = prod-client-id
+           plugin.tx_okexchange365mailer.settings.exchange365.tenantId = prod-tenant-id
        [END]
 
 2. **Conditional Loading**
