@@ -102,8 +102,12 @@ class Exchange365Transport extends AbstractTransport
             // Convert to Microsoft Graph message format
             $graphMessage = MSGraphMailApiService::convertToGraphMessage($message);
 
-            $confFromEmail = $graphMessage['from'] ?? $conf['fromEmail'] ?? null;
+            $confFromEmail = $graphMessage['from'] ?? $conf['fromEmail'] ?? $GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromAddress'] ?? null;
 
+            if (empty($confFromEmail)) {
+                throw new \RuntimeException('No valid "from" email address found in configuration.');
+            }
+            
             $requestBody = new SendMailPostRequestBody();
             $requestBody->setMessage($graphMessage['message']);
             $requestBody->setSaveToSentItems($saveToSentItems);
