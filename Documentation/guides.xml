@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- See  https://docs.typo3.org/permalink/h2document:guides-xml for documentation on this file-->
+<guides xmlns="https://www.phpdoc.org/guides" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://www.phpdoc.org/guides ../vendor/phpdocumentor/guides-cli/resources/schema/guides.xsd"
+        links-are-relative="true"
+        default-code-language="php"
+        input-format="rst"
+>
+    <extension class="\T3Docs\Typo3DocsTheme\DependencyInjection\Typo3DocsThemeExtension"
+               project-home="https://extensions.typo3.org/extension/ok_exchange365_mailer"
+               project-contact="https://github.com/oliverkroener/ok_exchange365_mailer/discussions"
+               project-repository="https://github.com/oliverkroener/ok_exchange365_mailer"
+               project-issues="https://github.com/oliverkroener/ok_exchange365_mailer/issues"
+               project-discussions="https://github.com/oliverkroener/ok_exchange365_mailer/discussions"
+               edit-on-github-branch="main"
+               edit-on-github="oliverkroener/ok_exchange365_mailer"
+               typo3-core-preferred="13.4"
+               interlink-shortcode="oliverkroener/ok-exchange365-mailer"
+    />
+    <project title="Microsoft Exchange 365 Mailer" 
+             release="3.0.3" 
+             version="local"
+             copyright="since 2024 by Oliver Kroener &amp; Contributors"/>
+    <inventory id="t3extbasebook" url="https://docs.typo3.org/m/typo3/book-extbasefluid/12.4/en-us/"/>
+</guides>
