@@ -86,19 +86,7 @@ The following 5 parameters must be configured in your TypoScript setup for front
         - Replace `service@your-domain.com` with a valid email address from your Exchange 365 environment
         - This email must exist as a **SharedMailbox** or **User Mailbox** in your organization
         - If not specified, falls back to `config.mail.defaultMailFromAddress`
-
-6.  **Save to Sent Items (Optional)**
-
-    Determine whether frontend emails should be saved to the sender's "Sent Items" folder.
-
-    ..  code-block:: typoscript
-
-        plugin.tx_okexchange365mailer.settings.exchange365.saveToSentItems = 1
-
-    ..  note::
-        - Set to `1` to save emails to Sent Items folder
-        - Set to `0` to skip saving emails to Sent Items folder
-        - Default value is `0` if not specified
+        - 
 
 Complete TypoScript Configuration Example
 ==========================================
@@ -130,7 +118,6 @@ Here's a complete TypoScript setup example for frontend email functionality:
                 
                 # Email Configuration
                 fromEmail = service@your-domain.com
-                saveToSentItems = 1
             }
         }
     }
@@ -249,7 +236,6 @@ To test your frontend configuration:
 1. **Create a test form** using Powermail or Form Framework
 2. **Submit the form** and verify email delivery
 3. **Check TYPO3 logs** for any authentication or sending errors
-4. **Verify in Exchange 365** that emails appear in the sender's mailbox (if saveToSentItems is enabled)
 
 ..  tip::
     Use TYPO3's mail spooling functionality during development to prevent sending actual emails while testing configuration.

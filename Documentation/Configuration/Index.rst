@@ -26,7 +26,6 @@ The extension requires the following key configuration variables:
 3. **Client ID**: Your Azure application identifier
 4. **Client Secret**: Your Azure application secret
 5. **From Email**: The sender email address
-6. **Save to Sent Items**: Whether to save emails to sent folder
 
 For detailed step-by-step instructions, see:
 

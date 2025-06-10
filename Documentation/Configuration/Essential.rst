@@ -94,19 +94,6 @@ The following steps show the configuration with .env variables, but you can also
         - This email address must exist in your Exchange 365 environment
         - The application needs permission to send emails on behalf of this address
 
-6.  Configure save to sent items (optional).
-
-    Determine whether sent emails should be saved to the sender's "Sent Items" folder.
-
-    ..  code-block:: bash
-
-        TYPO3_CONF_VARS__MAIL__transport_exchange365_saveToSentItems=1
-
-    ..  note::
-        - Set to `1` to save emails to Sent Items folder
-        - Set to `0` to skip saving emails to Sent Items folder
-        - Default value is `0` (enabled) if not specified
-
 ..  _configuration-example:
 
 Configuration Example
@@ -132,7 +119,6 @@ You can configure these settings using a `.env` file in your TYPO3 root director
     TYPO3_CONF_VARS__MAIL__transport_exchange365_clientId='your-client-id-here'
     TYPO3_CONF_VARS__MAIL__transport_exchange365_clientSecret='your-client-secret-here'
     TYPO3_CONF_VARS__MAIL__transport_exchange365_fromEmail='service@your-domain.com'
-    TYPO3_CONF_VARS__MAIL__transport_exchange365_saveToSentItems=1
 
 ..  _alternative-configuration-methods:
 
@@ -156,7 +142,6 @@ Alternatively, you can add these settings directly to your TYPO3 configuration f
             'transport_exchange365_clientId' => 'your-client-id-here',
             'transport_exchange365_clientSecret' => 'your-client-secret-here',
             'transport_exchange365_fromEmail' => 'service@your-domain.com',
-            'transport_exchange365_saveToSentItems' => 1,
         ],
         
         // ...existing configuration...
@@ -173,7 +158,6 @@ Or using the $GLOBALS syntax:
     $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_clientId'] = 'your-client-id-here';
     $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_clientSecret'] = 'your-client-secret-here';
     $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_fromEmail'] = 'service@your-domain.com';
-    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_saveToSentItems'] = 1;
 
 ..  attention::
     - Replace placeholder values with your actual Azure configuration values
@@ -190,7 +174,6 @@ After configuring all variables, you can test the email functionality by:
 1. Sending a test email through TYPO3's mail functionality
 2. Checking the TYPO3 logs for any error messages
 3. Verifying that emails are received at the intended recipients
-4. Checking the sender's "Sent Items" folder if `saveToSentItems` is enabled
 
 ..  tip::
     Enable TYPO3's developer log to see detailed information about the email sending process and any potential issues with the Exchange 365 integration.

@@ -12,13 +12,13 @@
                project-repository="https://github.com/oliverkroener/ok_exchange365_mailer"
                project-issues="https://github.com/oliverkroener/ok_exchange365_mailer/issues"
                project-discussions="https://github.com/oliverkroener/ok_exchange365_mailer/discussions"
-               edit-on-github-branch="main"
+               edit-on-github-branch="feature-typo3-10"
                edit-on-github="oliverkroener/ok_exchange365_mailer"
-               typo3-core-preferred="13.4"
+               typo3-core-preferred="10.4"
                interlink-shortcode="oliverkroener/ok-exchange365-mailer"
     />
     <project title="Microsoft Exchange 365 Mailer" 
-             release="main (development)" 
+             release="2.0.3" 
              version="local"
              copyright="since 2024 by Oliver Kroener &amp; Contributors"/>
     <inventory id="t3extbasebook" url="https://docs.typo3.org/m/typo3/book-extbasefluid/12.4/en-us/"/>
