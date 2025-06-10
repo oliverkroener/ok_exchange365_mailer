@@ -13,7 +13,6 @@
     "require": {
         "php": ">=7.2",
         "typo3/cms-core": "^10.4",
-        "oliverkroener/ok-typo3-helper": "^2",
         "microsoft/microsoft-graph": "^1"
     },
     "autoload": {
