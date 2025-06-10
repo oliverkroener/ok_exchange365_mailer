@@ -18,7 +18,7 @@
                interlink-shortcode="oliverkroener/ok-exchange365-mailer"
     />
     <project title="Microsoft Exchange 365 Mailer" 
-             release="2.0.3" 
+             release="2.0.5" 
              version="local"
              copyright="since 2024 by Oliver Kroener &amp; Contributors"/>
     <inventory id="t3extbasebook" url="https://docs.typo3.org/m/typo3/book-extbasefluid/12.4/en-us/"/>
