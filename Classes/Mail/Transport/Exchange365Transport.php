@@ -12,8 +12,9 @@ use Symfony\Component\Mime\RawMessage;
 use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Log\LogManager;
+use Symfony\Component\Mailer\Transport\AbstractTransport;
 
-class Exchange365Transport implements TransportInterface
+class Exchange365Transport extends AbstractTransport
 {
     private $sentMessage;
     private $mailSettings;
@@ -30,29 +31,32 @@ class Exchange365Transport implements TransportInterface
      * Sends the email using Microsoft Graph API.
      *
      * @param RawMessage $message The email message to be sent.
-     * @param Envelope|null $envelope The envelope configuration, if any.
+     * @param Envelope $envelope The envelope containing sender and recipients.
+     * @return SentMessage The sent message.
      * @throws RuntimeException If sending fails.
      */
-    public function send(RawMessage $message, ?Envelope $envelope = null): ?SentMessage
+    public function doSend(SentMessage $message): void
     {
         try {
+            // Attempt to get configuration from TypoScript if in frontend context
+            $conf = null;
+
+            // Check if frontend mode
             $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
 
-            // check if is not in frontend
+            // If configuration not found, try to get from mail settings
             if (empty($conf)) {
-                // get variables from globals
                 $conf = [];
                 $conf['tenantId'] = $this->mailSettings['transport_exchange365_tenantId'] ?? '';
                 $conf['clientId'] = $this->mailSettings['transport_exchange365_clientId'] ?? '';
                 $conf['clientSecret'] = $this->mailSettings['transport_exchange365_clientSecret'] ?? '';
+                $conf['fromEmail'] = $this->mailSettings['transport_exchange365_fromEmail'] ?? '';
                 $conf['saveToSentItems'] = $this->mailSettings['transport_exchange365_saveToSentItems'] ?? '';
             }
 
-            if (empty($conf)) {
-                throw new \RuntimeException('Exchange365 mail configuration not found.');
+            if (empty($conf['tenantId']) || empty($conf['clientId']) || empty($conf['clientSecret'])) {
+                throw new \RuntimeException('Exchange 365 mail configuration not found or incomplete. Please check tenantId, clientId, and clientSecret.');
             }
-
-            $saveToSentItems = $conf['saveToSentItems'] ?? 0;
 
             $guzzle = new \GuzzleHttp\Client();
             $url = 'https://login.microsoftonline.com/' . $conf['tenantId'] . '/oauth2/token?api-version=1.0';
@@ -70,20 +74,16 @@ class Exchange365Transport implements TransportInterface
             $graph = new Graph();
             $graph->setAccessToken($accessToken);
 
-            // Convert to Microsoft Graph message format
-            $graphMessage = MSGraphMailApiService::convertToGraphMessage($message);
+            // Get FROM email address
+            $confFromEmail = $message->getEnvelope()->getSender()->getAddress() ?? $conf['fromEmail'] ?? '';
 
-            $confFromEmail = $graphMessage['from'];
-
-            $sendMailPostRequestBody = [
-                'message' => json_decode(json_encode($graphMessage['message']), true),
-                'saveToSentItems' => $saveToSentItems == 1 ? 'true' : 'false'
-            ];
+            $rawMessage = $message->getMessage()->toString();
 
             // Send the email using Microsoft Graph API
             $urlSuffix = '/users/' . urlencode($confFromEmail) . '/sendMail';
             $graph->createRequest('POST', $urlSuffix)
-                        ->attachBody($sendMailPostRequestBody)
+                        ->addHeaders(['Content-Type' => 'text/plain'])
+                        ->attachBody(base64_encode($rawMessage)) // $sendMailPostRequestBody)
                         ->execute();
 
         } catch (Exception $e) {
@@ -92,14 +92,6 @@ class Exchange365Transport implements TransportInterface
         }
 
         $this->logger->debug('Mail sent successfully with ' . self::class);
-
-        if (!$envelope) {
-            $sentMessage = null;
-        } else {
-            $sentMessage = new SentMessage($message, $envelope);
-        }
-
-        return $sentMessage;
     }
 
     /**
