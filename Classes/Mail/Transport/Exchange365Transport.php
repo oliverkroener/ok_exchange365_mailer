@@ -40,18 +40,17 @@ class Exchange365Transport extends AbstractTransport
         // Initialize the logger using TYPO3's logging system
         $this->logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
         $this->mailSettings = $mailSettings;
-        $this->mailSettings = $mailSettings;
     }
 
     /**
      * Sends the email using Microsoft Graph API.
      *
      * @param SentMessage $message The email message to be sent.
-     * @param SentMessage $message The email message to be sent.
      * @throws RuntimeException If sending fails.
      */
     protected function doSend(SentMessage $message): void
     {
+        $confFromEmail = '';
         try {
             // Attempt to get configuration from TypoScript if in frontend context
             $conf = null;
@@ -115,8 +114,11 @@ class Exchange365Transport extends AbstractTransport
             // Send the email using Microsoft Graph API
             $graphServiceClient->users()->byUserId($confFromEmail)->sendMail()->post($requestBody)->wait();
         } catch (Exception $e) {
-            $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed!' . PHP_EOL . $e->getMessage());
-            throw new RuntimeException("Sending mail with Exchange365 mailer failed. Please check credentials setup." . $e->getTraceAsString());
+            $fromInfo = $confFromEmail ?: 'unknown';
+            $this->logger->alert('Sending mail from ' . $fromInfo . ' failed!' . PHP_EOL . $e->getMessage());
+            throw new RuntimeException(
+                'Sending mail with Exchange365 mailer failed. Please check credentials setup.' . $e->getTraceAsString()
+            );
         }
 
         $this->logger->debug('Mail sent successfully with ' . self::class);
