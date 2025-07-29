@@ -21,25 +21,23 @@ class Exchange365Transport extends AbstractTransport
     private array $mailSettings;
     private LoggerInterface $logger;
 
+    /**
+     * Constructor for Exchange365Transport
+     *
+     * @param array $mailSettings Mail configuration settings
+     * @param EventDispatcherInterface|null $dispatcher Event dispatcher instance (optional)
+     * @param LoggerInterface|null $logger Logger instance (optional)
+     */
     public function  __construct(array $mailSettings, ?EventDispatcherInterface $dispatcher = null, ?LoggerInterface $logger = null)
     {
-        // get the dispatcher (normally in Classes/Mail/TransportFactory.php but not for custom transports)
-        // we need this to dispatch some events like onMEssage send etc.
-        if (class_exists('TYPO3\CMS\Core\Adapter\EventDispatcherAdapter')) {
-            $eventDispatcherAdapter = GeneralUtility::makeInstance(
-                \TYPO3\CMS\Core\Adapter\EventDispatcherAdapter::class
-            );
-        } else {
-            // TODO remove if support for TYPO3 11 dropped
-            $eventDispatcherAdapter = GeneralUtility::makeInstance(
-                \TYPO3\SymfonyPsrEventDispatcherAdapter\EventDispatcherAdapter::class
-            );
-        }
+        $eventDispatcherAdapter = GeneralUtility::makeInstance(
+            \TYPO3\CMS\Core\Adapter\EventDispatcherAdapter::class
+        );
+
         parent::__construct($dispatcher ?? $eventDispatcherAdapter);
 
         // Initialize the logger using TYPO3's logging system
-        $this->logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
-        $this->mailSettings = $mailSettings;
+        $this->logger = $logger ?? GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
         $this->mailSettings = $mailSettings;
     }
 
@@ -47,50 +45,20 @@ class Exchange365Transport extends AbstractTransport
      * Sends the email using Microsoft Graph API.
      *
      * @param SentMessage $message The email message to be sent.
-     * @param SentMessage $message The email message to be sent.
      * @throws RuntimeException If sending fails.
      */
     protected function doSend(SentMessage $message): void
     {
+        $confFromEmail = '';
+
         try {
-            // Attempt to get configuration from TypoScript if in frontend context
-            $conf = null;
+            // Get configuration from different sources
+            $conf = $this->getConfiguration();
 
-            $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
+            // Validate required configuration
+            $this->validateConfiguration($conf);
 
-            // Check if frontend mode
-            if ($request?->getAttribute('applicationType') === 1) {
-
-                $currentVersion = VersionNumberUtility::getNumericTypo3Version();
-
-                if (version_compare($currentVersion, "12.4.1", ">=")) {
-
-                    $fullTypoScript = $request->getAttribute('frontend.typoscript')->getSetupArray();
-                    // TypoScript configuration retrieval is not required here
-                    $conf = $fullTypoScript['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
-
-                } else {
-
-                    $conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
-
-                }
-            }
-            // If configuration not found, try to get from mail settings
-            if (empty($conf)) {
-                $conf = [];
-                $conf['tenantId'] = $this->mailSettings['transport_exchange365_tenantId'] ?? '';
-                $conf['clientId'] = $this->mailSettings['transport_exchange365_clientId'] ?? '';
-                $conf['clientSecret'] = $this->mailSettings['transport_exchange365_clientSecret'] ?? '';
-                $conf['fromEmail'] = $this->mailSettings['transport_exchange365_fromEmail'] ?? '';
-                $conf['saveToSentItems'] = $this->mailSettings['transport_exchange365_saveToSentItems'] ?? '';
-            }
-
-            if (empty($conf)) {
-                throw new \RuntimeException('Exchange 365 mail configuration not found.');
-            }
-
-            $saveToSentItems = $conf['saveToSentItems'] ?? 0;
-
+            // Setup authentication context
             $tokenRequestContext = new ClientCredentialContext(
                 $conf['tenantId'],
                 $conf['clientId'],
@@ -102,24 +70,118 @@ class Exchange365Transport extends AbstractTransport
             // Convert to Microsoft Graph message format
             $graphMessage = MSGraphMailApiService::convertToGraphMessage($message);
 
-            $confFromEmail = $graphMessage['from'] ?? $conf['fromEmail'] ?? $GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromAddress'] ?? null;
+            // Determine from email address
+            $confFromEmail = $graphMessage['from']
+                ?? $conf['fromEmail']
+                ?? $GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromAddress']
+                ?? '';
 
             if (empty($confFromEmail)) {
-                throw new \RuntimeException('No valid "from" email address found in configuration.');
+                throw new RuntimeException('No valid "from" email address found in configuration.');
             }
-            
+
+            // Prepare request body
             $requestBody = new SendMailPostRequestBody();
             $requestBody->setMessage($graphMessage['message']);
-            $requestBody->setSaveToSentItems($saveToSentItems);
+            // Ensure boolean conversion for saveToSentItems
+            $requestBody->setSaveToSentItems((bool)($conf['saveToSentItems'] ?? false));
 
             // Send the email using Microsoft Graph API
             $graphServiceClient->users()->byUserId($confFromEmail)->sendMail()->post($requestBody)->wait();
+
+            $this->logger->debug('Mail sent successfully with ' . self::class . ' from ' . $confFromEmail);
         } catch (Exception $e) {
-            $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed!' . PHP_EOL . $e->getMessage());
-            throw new RuntimeException("Sending mail with Exchange365 mailer failed. Please check credentials setup." . $e->getTraceAsString());
+            $errorMessage = 'Sending mail' . ($confFromEmail ? " from {$confFromEmail}" : '') . ' failed: ' . $e->getMessage();
+            $this->logger->alert($errorMessage);
+            throw new RuntimeException("Sending mail with Exchange365 mailer failed. Please check credentials setup. Error: " . $e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
+     * Get configuration from TypoScript or mail settings
+     * 
+     * @return array
+     * @throws RuntimeException
+     */
+    private function getConfiguration(): array
+    {
+        // Try to get configuration from TypoScript first
+        $conf = $this->getTypoScriptConfiguration();
+
+        // Fallback to mail settings if TypoScript not available
+        if (empty($conf)) {
+            $conf = $this->getMailSettingsConfiguration();
         }
 
-        $this->logger->debug('Mail sent successfully with ' . self::class);
+        if (empty($conf)) {
+            throw new RuntimeException('Exchange 365 mail configuration not found.');
+        }
+
+        return $conf;
+    }
+
+    /**
+     * Get configuration from TypoScript (TYPO3 12 compatible)
+     * 
+     * @return array|null
+     */
+    private function getTypoScriptConfiguration(): ?array
+    {
+        $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
+
+        // Check if frontend mode (applicationType 1 = frontend)
+        if ($request?->getAttribute('applicationType') !== 1) {
+            return null;
+        }
+
+        $currentVersion = VersionNumberUtility::getNumericTypo3Version();
+
+        // TYPO3 12.4.1+ uses the new TypoScript API
+        if (version_compare($currentVersion, "12.4.1", ">=")) {
+            $frontendTypoScript = $request->getAttribute('frontend.typoscript');
+            if ($frontendTypoScript === null) {
+                return null;
+            }
+
+            $fullTypoScript = $frontendTypoScript->getSetupArray();
+            return $fullTypoScript['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
+        } else {
+            // Fallback for older TYPO3 versions (should be removed when TYPO3 11 support is dropped)
+            return $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
+        }
+    }
+
+    /**
+     * Get configuration from mail settings
+     * 
+     * @return array
+     */
+    private function getMailSettingsConfiguration(): array
+    {
+        return [
+            'tenantId' => $this->mailSettings['transport_exchange365_tenantId'] ?? '',
+            'clientId' => $this->mailSettings['transport_exchange365_clientId'] ?? '',
+            'clientSecret' => $this->mailSettings['transport_exchange365_clientSecret'] ?? '',
+            'fromEmail' => $this->mailSettings['transport_exchange365_fromEmail'] ?? '',
+            'saveToSentItems' => $this->mailSettings['transport_exchange365_saveToSentItems'] ?? '0',
+        ];
+    }
+
+    /**
+     * Validate required configuration values
+     * 
+     * @param array $conf
+     * @throws RuntimeException
+     */
+    private function validateConfiguration(array $conf): void
+    {
+        $requiredFields = ['tenantId', 'clientId', 'clientSecret'];
+
+        foreach ($requiredFields as $field) {
+            if (empty($conf[$field])) {
+                throw new RuntimeException("Exchange 365 configuration missing required field: {$field}");
+            }
+        }
     }
 
     /**
