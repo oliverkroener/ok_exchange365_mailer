@@ -38,6 +38,7 @@ Microsoft Exchange 365 Mailer
     */Index
     Installation
     Azure
+    ExchangeSetup
     Configuration/Index
     GetHelp
     [!Sitemap]
@@ -59,6 +60,10 @@ Microsoft Exchange 365 Mailer
     * **API Integration**: Leverages Microsoft Graph API for direct email sending
     * **Scalability**: Handles high email volumes without additional infrastructure
 
+..  attention::
+    Since **Q3 2025**, Microsoft has enforced stricter access policies in *some* Exchange 365 tenants. You may need to configure an **Application Access Policy** to restrict app permissions to specific mailboxes. See :ref:`Exchange Online Setup <exchange-setup>`.
+
+    This can also be used to restrict sending to *only* specific sender addresses (e.g., a **shared mailbox**).
 
 ..  card-grid::
     :columns: 1
@@ -75,7 +80,11 @@ Microsoft Exchange 365 Mailer
     ..  card:: :ref:`Configuration Microsoft Entra ID <azure>`
 
         Learn how to configure Microsoft Entra ID (formerly Microsoft AD) for this extension.
-        
+
+    ..  card:: :ref:`Exchange Online Setup <exchange-setup>`
+
+        Configure Application Access Policies to restrict app permissions to specific mailboxes.
+
     ..  card:: :ref:`Configuration <configuration>`
 
         Learn how to configure this extension.
