@@ -31,6 +31,10 @@ TYPO3 extension (`ok_exchange365_mailer`) that enables sending emails via Micros
 | From Email | `fromEmail` | `transport_exchange365_fromEmail` |
 | Save to Sent | `saveToSentItems` | `transport_exchange365_saveToSentItems` |
 
+## Important Behavior
+
+- **Sender display name**: The Graph API uses the **Display name** configured on the mailbox in Exchange Online. TYPO3's `$GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromName']` and `defaultMailFromAddress` have **no effect** on the sender name shown to recipients. The display name must be configured in the Microsoft 365 Admin Center or Exchange Admin Center.
+
 ## Dependencies
 
 - `microsoft/microsoft-graph` ^2 - MS Graph API SDK

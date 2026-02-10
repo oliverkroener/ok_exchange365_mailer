@@ -38,7 +38,7 @@ Microsoft Exchange 365 Mailer
     */Index
     Installation
     Azure
-    ExchangeSetup
+    ExchangeSetup/Index
     Configuration/Index
     GetHelp
     [!Sitemap]
