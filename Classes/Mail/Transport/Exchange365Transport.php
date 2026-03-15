@@ -2,14 +2,12 @@
 
 namespace OliverKroener\OkExchange365\Mail\Transport;
 
-use Exception;
 use Microsoft\Graph\Generated\Users\Item\SendMail\SendMailPostRequestBody;
-use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
 use Microsoft\Graph\GraphServiceClient;
+use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
 use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use TYPO3\CMS\Core\Log\LogManager;
@@ -28,7 +26,7 @@ class Exchange365Transport extends AbstractTransport
      * @param EventDispatcherInterface|null $dispatcher Event dispatcher instance (optional)
      * @param LoggerInterface|null $logger Logger instance (optional)
      */
-    public function  __construct(array $mailSettings, ?EventDispatcherInterface $dispatcher = null, ?LoggerInterface $logger = null)
+    public function __construct(array $mailSettings, ?EventDispatcherInterface $dispatcher = null, ?LoggerInterface $logger = null)
     {
         $eventDispatcherAdapter = GeneralUtility::makeInstance(
             \TYPO3\CMS\Core\Adapter\EventDispatcherAdapter::class
@@ -45,7 +43,7 @@ class Exchange365Transport extends AbstractTransport
      * Sends the email using Microsoft Graph API.
      *
      * @param SentMessage $message The email message to be sent.
-     * @throws RuntimeException If sending fails.
+     * @throws \RuntimeException If sending fails.
      */
     protected function doSend(SentMessage $message): void
     {
@@ -77,7 +75,7 @@ class Exchange365Transport extends AbstractTransport
                 ?? '';
 
             if (empty($confFromEmail)) {
-                throw new RuntimeException('No valid "from" email address found in configuration.');
+                throw new \RuntimeException('No valid "from" email address found in configuration.');
             }
 
             // Prepare request body
@@ -90,18 +88,18 @@ class Exchange365Transport extends AbstractTransport
             $graphServiceClient->users()->byUserId($confFromEmail)->sendMail()->post($requestBody)->wait();
 
             $this->logger->debug('Mail sent successfully with ' . self::class . ' from ' . $confFromEmail);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $errorMessage = 'Sending mail' . ($confFromEmail ? " from {$confFromEmail}" : '') . ' failed: ' . $e->getMessage();
             $this->logger->alert($errorMessage);
-            throw new RuntimeException("Sending mail with Exchange365 mailer failed. Please check credentials setup. Error: " . $e->getMessage(), 0, $e);
+            throw new \RuntimeException('Sending mail with Exchange365 mailer failed. Please check credentials setup. Error: ' . $e->getMessage(), 0, $e);
         }
     }
 
     /**
      * Get configuration from TypoScript or mail settings
-     * 
+     *
      * @return array
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     private function getConfiguration(): array
     {
@@ -114,7 +112,7 @@ class Exchange365Transport extends AbstractTransport
         }
 
         if (empty($conf)) {
-            throw new RuntimeException('Exchange 365 mail configuration not found.');
+            throw new \RuntimeException('Exchange 365 mail configuration not found.');
         }
 
         return $conf;
@@ -122,7 +120,7 @@ class Exchange365Transport extends AbstractTransport
 
     /**
      * Get configuration from TypoScript (TYPO3 12 compatible)
-     * 
+     *
      * @return array|null
      */
     private function getTypoScriptConfiguration(): ?array
@@ -137,7 +135,7 @@ class Exchange365Transport extends AbstractTransport
         $currentVersion = VersionNumberUtility::getNumericTypo3Version();
 
         // TYPO3 12.4.1+ uses the new TypoScript API
-        if (version_compare($currentVersion, "12.4.1", ">=")) {
+        if (version_compare($currentVersion, '12.4.1', '>=')) {
             $frontendTypoScript = $request->getAttribute('frontend.typoscript');
             if ($frontendTypoScript === null) {
                 return null;
@@ -145,15 +143,15 @@ class Exchange365Transport extends AbstractTransport
 
             $fullTypoScript = $frontendTypoScript->getSetupArray();
             return $fullTypoScript['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
-        } else {
-            // Fallback for older TYPO3 versions (should be removed when TYPO3 11 support is dropped)
-            return $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
         }
+        // Fallback for older TYPO3 versions (should be removed when TYPO3 11 support is dropped)
+        return $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.'] ?? null;
+
     }
 
     /**
      * Get configuration from mail settings
-     * 
+     *
      * @return array
      */
     private function getMailSettingsConfiguration(): array
@@ -169,9 +167,9 @@ class Exchange365Transport extends AbstractTransport
 
     /**
      * Validate required configuration values
-     * 
+     *
      * @param array $conf
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     private function validateConfiguration(array $conf): void
     {
@@ -179,7 +177,7 @@ class Exchange365Transport extends AbstractTransport
 
         foreach ($requiredFields as $field) {
             if (empty($conf[$field])) {
-                throw new RuntimeException("Exchange 365 configuration missing required field: {$field}");
+                throw new \RuntimeException("Exchange 365 configuration missing required field: {$field}");
             }
         }
     }
