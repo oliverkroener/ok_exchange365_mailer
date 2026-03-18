@@ -1,64 +1,38 @@
-:navigation-title: 
-    Exchange 365 Mailer
-    
+..  include:: /Includes.rst.txt
+
 ..  _start:
 
 =============================
 Microsoft Exchange 365 Mailer
 =============================
 
-:Extension key: 
-    ok_exchange365_mailer
+:Extension key:
+   ok_exchange365_mailer
 
 :Package name:
-    oliverkroener/ok-exchange365-mailer
+   oliverkroener/ok-exchange365-mailer
 
 :Version:
-    |release|
+   |release|
 
 :Language:
-    en
+   en
 
 :Author:
-    Oliver Kroener <https://www.oliver-kroener.de> & Contributors
+   `Oliver Kroener <https://www.oliver-kroener.de>`__ <ok@oliver-kroener.de>
 
 :License:
    This document is published under the
    `Open Publication License <https://www.opencontent.org/openpub/>`__.
 
 :Rendered:
-    |today|
+   |today|
 
-..  toctree::
-    :glob:
-    :titlesonly:
-    :hidden:
-    :maxdepth: 2
+----
 
-    */Index
-    Installation
-    Azure
-    ExchangeSetup/Index
-    Configuration/Index
-    GetHelp
-    [!Sitemap]
-
-.. toctree::
-   :hidden:
-
-   Sitemap
-
-    ----
-    ..  meta::
-        :description: TYPO3 extension for Microsoft Exchange 365 email integration using Graph API without SMTP
-        :keywords: TYPO3, Exchange 365, Microsoft Graph API, OAuth 2.0, email integration
-    ----
-
-..  note::
-    * **Purpose**: Enables TYPO3 to send emails through Microsoft Exchange 365 using Graph API instead of SMTP
-    * **Authentication**: Uses OAuth 2.0 for secure token-based authentication
-    * **API Integration**: Leverages Microsoft Graph API for direct email sending
-    * **Scalability**: Handles high email volumes without additional infrastructure
+A TYPO3 extension for sending emails via Microsoft Exchange 365 using the
+MS Graph API instead of SMTP. Uses OAuth 2.0 client credentials flow for
+secure, token-based authentication.
 
 ..  attention::
     Since **Q3 2025**, Microsoft has enforced stricter access policies in *some* Exchange 365 tenants. You may need to configure an **Application Access Policy** to restrict app permissions to specific mailboxes. See :ref:`Exchange Online Setup <exchange-setup>`.
@@ -72,27 +46,61 @@ Microsoft Exchange 365 Mailer
     :class: pb-4
     :card-height: 100
 
-    ..  card:: :ref:`Installation <installation>`
+    ..  card:: Installation
 
-        Explains how to install this extension in Composer-based and Classic
-        TYPO3 installations.
+        Install the extension via Composer and activate it in your TYPO3 project.
 
-    ..  card:: :ref:`Configuration Microsoft Entra ID <azure>`
+        ..  card-footer:: :ref:`Get started <installation>`
+            :button-style: btn btn-primary
 
-        Learn how to configure Microsoft Entra ID (formerly Microsoft AD) for this extension.
+    ..  card:: Microsoft Entra ID Setup
 
-    ..  card:: :ref:`Exchange Online Setup <exchange-setup>`
+        Register an app in Microsoft Entra ID (formerly Azure AD) and configure
+        API permissions for Graph API mail sending.
 
-        Configure Application Access Policies to restrict app permissions to specific mailboxes.
+        ..  card-footer:: :ref:`Configure Azure <azure>`
+            :button-style: btn btn-primary
 
-    ..  card:: :ref:`Configuration <configuration>`
+    ..  card:: Exchange Online Setup
 
-        Learn how to configure this extension.
+        Configure Application Access Policies to restrict app permissions to
+        specific mailboxes using PowerShell.
 
-    ..  card:: :ref:`Frequently Asked Questions (FAQ) <faq>`
+        ..  card-footer:: :ref:`View guide <exchange-setup>`
+            :button-style: btn btn-primary
 
-        These questions have been frequently asked.
+    ..  card:: Configuration
 
-    ..  card:: :ref:`How to get help <help>`
+        Set up the extension via environment variables, TYPO3 settings, or
+        TypoScript for frontend form integration.
 
-        Learn where to get help and how to report issues you found.
+        ..  card-footer:: :ref:`Configure <configuration>`
+            :button-style: btn btn-primary
+
+    ..  card:: FAQ
+
+        Answers to frequently asked questions about installation, configuration,
+        and usage.
+
+        ..  card-footer:: :ref:`Read FAQ <faq>`
+            :button-style: btn btn-primary
+
+    ..  card:: Contact
+
+        Get in touch with the author for support, questions, or contributions.
+
+        ..  card-footer:: :ref:`Get in touch <contact>`
+            :button-style: btn btn-primary
+
+..  toctree::
+    :maxdepth: 2
+    :titlesonly:
+    :hidden:
+
+    Installation
+    Azure
+    ExchangeSetup/Index
+    Configuration/Index
+    Faq
+    GetHelp
+    Contact/Index
