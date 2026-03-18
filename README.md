@@ -119,8 +119,15 @@ Configuration/
 
 GPL-2.0-or-later
 
-## Author
+## Author — Oliver Kroener
 
-**Oliver Kroener** — [oliver-kroener.de](https://www.oliver-kroener.de) — [web3.oliver-kroener.de](https://web3.oliver-kroener.de/) — [ok@oliver-kroener.de](mailto:ok@oliver-kroener.de) — [oliverkroener@ethermail.io](mailto:oliverkroener@ethermail.io)
+### Automated. Scaled. Done.
 
-*Web3 · Cloud · Automation — Automated. Scaled. Done.*
+Web3 · Cloud · Automation
+
+Technology is only valuable when it solves a real problem. For over 30 years I've been translating between business and tech — so your investment in digitalisation doesn't stall at proof-of-concept but delivers measurable results.
+
+- Website: [oliver-kroener.de](https://www.oliver-kroener.de)
+- Web3: [web3.oliver-kroener.de](https://web3.oliver-kroener.de/)
+- Email: [ok@oliver-kroener.de](mailto:ok@oliver-kroener.de)
+- Web3 Email: [oliverkroener@ethermail.io](mailto:oliverkroener@ethermail.io)

@@ -6,15 +6,18 @@
 Contact
 =======
 
-Author
-======
+Author — Oliver Kroener
+=======================
 
-**Oliver Kroener** — `oliver-kroener.de <https://www.oliver-kroener.de>`__
+Automated. Scaled. Done.
+-------------------------
 
-*Web3 · Cloud · Automation — Automated. Scaled. Done.*
+Web3 · Cloud · Automation
 
-Oliver is a software engineer and consultant specializing in Power Automate,
-AI, Microsoft Azure, TYPO3, and cloud solutions.
+Technology is only valuable when it solves a real problem. For over 30 years
+I've been translating between business and tech — so your investment in
+digitalisation doesn't stall at proof-of-concept but delivers measurable
+results.
 
 -  Website: `oliver-kroener.de <https://www.oliver-kroener.de>`__
 -  Web3: `web3.oliver-kroener.de <https://web3.oliver-kroener.de/>`__

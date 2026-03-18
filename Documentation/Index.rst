@@ -46,6 +46,13 @@ secure, token-based authentication.
     :class: pb-4
     :card-height: 100
 
+    ..  card:: Introduction
+
+        Learn what this extension does, its features, and system requirements.
+
+        ..  card-footer:: :ref:`Learn more <introduction>`
+            :button-style: btn btn-primary
+
     ..  card:: Installation
 
         Install the extension via Composer and activate it in your TYPO3 project.
@@ -97,6 +104,7 @@ secure, token-based authentication.
     :titlesonly:
     :hidden:
 
+    Introduction/Index
     Installation
     Azure
     ExchangeSetup/Index

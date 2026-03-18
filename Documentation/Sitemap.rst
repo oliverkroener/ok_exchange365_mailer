@@ -1,3 +1,4 @@
+:orphan:
 :template: sitemap.html
 
 =======
