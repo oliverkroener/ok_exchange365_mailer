@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 TYPO3 extension (`ok_exchange365_mailer`) that enables sending emails via Microsoft Exchange 365 using the MS Graph API instead of SMTP. Uses OAuth 2.0 client credentials flow for authentication.
 
-**Compatibility:** TYPO3 12.4 - 14.x | PHP 8.3
+**Compatibility:** TYPO3 12.4 LTS – 14.x | PHP 8.1 – 8.5
 
 ## Architecture
 
@@ -29,11 +29,14 @@ TYPO3 extension (`ok_exchange365_mailer`) that enables sending emails via Micros
 | Client ID | `clientId` | `transport_exchange365_clientId` |
 | Client Secret | `clientSecret` | `transport_exchange365_clientSecret` |
 | From Email | `fromEmail` | `transport_exchange365_fromEmail` |
+| Graph Sender User ID (optional) | `graphSenderUserId` | `transport_exchange365_graphSenderUserId` |
 | Save to Sent | `saveToSentItems` | `transport_exchange365_saveToSentItems` |
 
 ## Important Behavior
 
 - **Sender display name**: The Graph API uses the **Display name** configured on the mailbox in Exchange Online. TYPO3's `$GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromName']` and `defaultMailFromAddress` have **no effect** on the sender name shown to recipients. The display name must be configured in the Microsoft 365 Admin Center or Exchange Admin Center.
+
+- **Send As / Send On Behalf**: The optional `graphSenderUserId` decouples the Graph mailbox (path parameter of `/users/{id}/sendMail`) from the visible message `From` address. When set, that mailbox is used for the Graph call; the message `From` header (and the `fromEmail` / `defaultMailFromAddress` fallback) is unaffected. Use this when the configured mailbox has *Send As* or *Send On Behalf* permission on another mailbox in Exchange. When unset, the resolution chain is unchanged: `$graphMessage['from']` → `fromEmail` → `defaultMailFromAddress`. See <https://learn.microsoft.com/en-us/graph/outlook-send-mail-from-other-user>.
 
 ## Dependencies
 
