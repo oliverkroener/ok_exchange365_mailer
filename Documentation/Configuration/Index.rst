@@ -26,7 +26,10 @@ The extension requires the following key configuration variables:
 3. **Client ID**: Your Azure application identifier
 4. **Client Secret**: Your Azure application secret
 5. **From Email**: The sender email address
-6. **Save to Sent Items**: Whether to save emails to sent folder
+6. **Graph Sender User ID** *(optional)*: Mailbox used for the Microsoft Graph
+   ``/users/{id}/sendMail`` call. Decouples the Graph mailbox from the
+   visible ``From`` header for *Send As* / *Send On Behalf* scenarios.
+7. **Save to Sent Items**: Whether to save emails to sent folder
 
 For detailed step-by-step instructions, see:
 
@@ -34,7 +37,7 @@ For detailed step-by-step instructions, see:
 - :ref:`Frontend Configuration <frontend>` - For form-based email sending (Powermail, Form Framework)
 
 Configuration Methods
-====================
+=====================
 
 You can configure this extension using:
 

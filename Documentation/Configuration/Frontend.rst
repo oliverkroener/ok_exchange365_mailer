@@ -2,9 +2,9 @@
 
 ..  _frontend:
 
-====================
+======================
 Frontend Configuration
-====================
+======================
 
 The Exchange 365 Mailer extension supports frontend email sending through popular TYPO3 extensions like **Powermail**, **Form Framework**, and other form extensions. This requires additional TypoScript configuration to work properly.
 
@@ -87,7 +87,23 @@ The following 5 parameters must be configured in your TypoScript setup for front
         - This email must exist as a **SharedMailbox** or **User Mailbox** in your organization
         - If not specified, falls back to `config.mail.defaultMailFromAddress`
 
-6.  **Save to Sent Items (Optional)**
+6.  **Graph Sender User ID (Optional)**
+
+    Optionally set the Microsoft Graph mailbox/user ID used for the API
+    call ``/users/{id}/sendMail``. This is the **mailbox the API call is
+    made through**, which can differ from the visible message ``From``
+    address — useful for *Send As* or *Send On Behalf* scenarios.
+
+    ..  code-block:: typoscript
+
+        plugin.tx_okexchange365mailer.settings.exchange365.graphSenderUserId = account1@your-domain.com
+
+    ..  note::
+        - **Optional.** When unset, falls back to the message ``From`` address, then ``fromEmail``, then ``config.mail.defaultMailFromAddress``.
+        - The Azure application must have ``Mail.Send`` permission on the configured mailbox.
+        - Requires *Send As* or *Send On Behalf* permission in Exchange when the Graph sender differs from the visible ``From``. See `Send mail from another user (Microsoft Graph) <https://learn.microsoft.com/en-us/graph/outlook-send-mail-from-other-user>`_.
+
+7.  **Save to Sent Items (Optional)**
 
     Determine whether frontend emails should be saved to the sender's "Sent Items" folder.
 
@@ -130,6 +146,9 @@ Here's a complete TypoScript setup example for frontend email functionality:
                 
                 # Email Configuration
                 fromEmail = service@your-domain.com
+                # Optional: distinct Graph sender mailbox (Send As / Send On Behalf).
+                # Leave empty to use fromEmail as the Graph user ID (default).
+                # graphSenderUserId = account1@your-domain.com
                 saveToSentItems = 1
             }
         }

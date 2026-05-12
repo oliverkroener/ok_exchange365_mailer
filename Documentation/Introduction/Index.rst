@@ -30,12 +30,16 @@ Features
 -  Optional saving of sent emails to the sender's "Sent Items" folder
 -  Automatic credential blinding in TYPO3's configuration module
 -  Works with shared mailboxes and Application Access Policies
+-  **Send As / Send On Behalf** via the optional ``graphSenderUserId``
+   setting — decouples the Graph mailbox used for the API call from the
+   visible ``From`` header so a configured mailbox can send on behalf of
+   another
 
 Requirements
 ============
 
 -  **TYPO3**: 12.4 LTS, 13.4 LTS, or 14.x
--  **PHP**: 8.3+
+-  **PHP**: 8.1 – 8.5
 -  **Dependencies**:
 
    -  ``microsoft/microsoft-graph`` ^2 — Microsoft Graph SDK
