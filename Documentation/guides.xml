@@ -14,7 +14,7 @@
                project-discussions="https://github.com/oliverkroener/ok_exchange365_mailer/discussions"
                edit-on-github-branch="main"
                edit-on-github="oliverkroener/ok_exchange365_mailer"
-               typo3-core-preferred="13.4"
+               typo3-core-preferred="14.3"
                interlink-shortcode="oliverkroener/ok-exchange365-mailer"
     />
     <project title="Microsoft Exchange 365 Mailer"
