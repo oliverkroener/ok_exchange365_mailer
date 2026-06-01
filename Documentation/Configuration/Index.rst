@@ -26,6 +26,7 @@ The extension requires the following key configuration variables:
 3. **Client ID**: Your Azure application identifier
 4. **Client Secret**: Your Azure application secret
 5. **From Email**: The sender email address
+6. **Graph Sender User ID** *(optional)*: Mailbox used for the Graph API call (Send As / Send On Behalf)
 
 For detailed step-by-step instructions, see:
 

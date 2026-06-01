@@ -24,7 +24,7 @@ Frontend email sending requires the same 5 core parameters as the backend config
 Required TypoScript Parameters
 ==============================
 
-The following 5 parameters must be configured in your TypoScript setup for frontend email functionality:
+The following 5 parameters must be configured in your TypoScript setup for frontend email functionality. A 6th optional parameter (`graphSenderUserId`) enables Send As / Send On Behalf:
 
 ..  rst-class:: bignums-xxl
 
@@ -86,7 +86,19 @@ The following 5 parameters must be configured in your TypoScript setup for front
         - Replace `service@your-domain.com` with a valid email address from your Exchange 365 environment
         - This email must exist as a **SharedMailbox** or **User Mailbox** in your organization
         - If not specified, falls back to `config.mail.defaultMailFromAddress`
-        - 
+
+6.  **Graph Sender User ID** (optional — Send As / Send On Behalf)
+
+    Set the Microsoft Graph mailbox/user ID used for the API call. It is resolved **separately**
+    from the message **From** address, so you can send *as* or *on behalf of* a different mailbox.
+
+    ..  code-block:: typoscript
+
+        plugin.tx_okexchange365mailer.settings.exchange365.graphSenderUserId = shared-mailbox@your-domain.com
+
+    ..  note::
+        - Leave empty to fall back to the message **From** address, then to `fromEmail`, then to `config.mail.defaultMailFromAddress`
+        - The Azure application must be permitted to send as / on behalf of this mailbox
 
 Complete TypoScript Configuration Example
 ==========================================
@@ -118,6 +130,9 @@ Here's a complete TypoScript setup example for frontend email functionality:
                 
                 # Email Configuration
                 fromEmail = service@your-domain.com
+
+                # Optional: Send As / Send On Behalf (defaults to fromEmail when empty)
+                graphSenderUserId = shared-mailbox@your-domain.com
             }
         }
     }

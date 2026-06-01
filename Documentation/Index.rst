@@ -20,7 +20,7 @@ Microsoft Exchange 365 Mailer
     en
 
 :Author:
-    Oliver Kroener <https://www.oliver-kroener.de> & Contributors
+   `Oliver Kroener <https://www.oliver-kroener.de>`__ <ok@oliver-kroener.de>
 
 :License:
    This document is published under the
@@ -29,29 +29,22 @@ Microsoft Exchange 365 Mailer
 :Rendered:
     |today|
 
+..  meta::
+    :description: TYPO3 extension for Microsoft Exchange 365 email integration using Graph API without SMTP
+    :keywords: TYPO3, Exchange 365, Microsoft Graph API, OAuth 2.0, email integration, Send As, Send On Behalf
+
 ..  toctree::
-    :glob:
     :titlesonly:
     :hidden:
     :maxdepth: 2
 
-    */Index
     Installation
     Azure
     Configuration/Index
+    Faq
     GetHelp
-    [!Sitemap]
-
-.. toctree::
-   :hidden:
-
-   Sitemap
-
-    ----
-    ..  meta::
-        :description: TYPO3 extension for Microsoft Exchange 365 email integration using Graph API without SMTP
-        :keywords: TYPO3, Exchange 365, Microsoft Graph API, OAuth 2.0, email integration
-    ----
+    Contact/Index
+    Sitemap
 
 ..  note::
     * **Purpose**: Enables TYPO3 to send emails through Microsoft Exchange 365 using Graph API instead of SMTP
@@ -87,3 +80,7 @@ Microsoft Exchange 365 Mailer
     ..  card:: :ref:`How to get help <help>`
 
         Learn where to get help and how to report issues you found.
+
+    ..  card:: :ref:`Contact <contact>`
+
+        Get in touch with the author for support, questions, or contributions.
