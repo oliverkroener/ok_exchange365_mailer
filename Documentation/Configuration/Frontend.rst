@@ -14,7 +14,7 @@ The Exchange 365 Mailer extension supports frontend email sending through popula
 Frontend Configuration Overview
 ===============================
 
-Frontend email sending requires the same 5 core parameters as the backend configuration, but they must be configured via **TypoScript** instead of environment variables or LocalConfiguration.php.
+Frontend email sending requires the same core parameters as the backend configuration, but they must be configured via **TypoScript** instead of environment variables or LocalConfiguration.php.
 
 ..  figure:: /_Images/image-frontend.png
     :alt: TYPO3 TypoScript configuration showing Exchange365 frontend parameters
@@ -24,7 +24,7 @@ Frontend email sending requires the same 5 core parameters as the backend config
 Required TypoScript Parameters
 ==============================
 
-The following 5 parameters must be configured in your TypoScript setup for frontend email functionality:
+The following parameters can be configured in your TypoScript setup for frontend email functionality (the transport class and the four credential/sender values are required; ``graphSenderUserId`` and ``saveToSentItems`` are optional):
 
 ..  rst-class:: bignums-xxl
 
@@ -87,7 +87,21 @@ The following 5 parameters must be configured in your TypoScript setup for front
         - This email must exist as a **SharedMailbox** or **User Mailbox** in your organization
         - If not specified, falls back to `config.mail.defaultMailFromAddress`
 
-6.  **Save to Sent Items (Optional)**
+6.  **Graph Sender User ID (Optional)**
+
+    Set the Microsoft Graph mailbox/user ID used for the API call. This is
+    separate from the **From** address and enables Send As / Send On Behalf
+    scenarios.
+
+    ..  code-block:: typoscript
+
+        plugin.tx_okexchange365mailer.settings.exchange365.graphSenderUserId = shared-mailbox@your-domain.com
+
+    ..  note::
+        - Leave empty to fall back to the message **From** address, then ``fromEmail``, then ``config.mail.defaultMailFromAddress``
+        - The Azure application must be permitted to send for this mailbox
+
+7.  **Save to Sent Items (Optional)**
 
     Determine whether frontend emails should be saved to the sender's "Sent Items" folder.
 
@@ -130,6 +144,8 @@ Here's a complete TypoScript setup example for frontend email functionality:
                 
                 # Email Configuration
                 fromEmail = service@your-domain.com
+                # Optional: Send As / Send On Behalf mailbox (empty = use fromEmail)
+                graphSenderUserId =
                 saveToSentItems = 1
             }
         }
@@ -260,7 +276,7 @@ Troubleshooting Frontend Issues
 Common issues and solutions:
 
 **Emails not sending**
-    - Verify all 5 parameters are correctly configured in TypoScript
+    - Verify all required parameters are correctly configured in TypoScript
     - Check that the Azure application has proper permissions
     - Ensure the sender email exists in Exchange 365
 

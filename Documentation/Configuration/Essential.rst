@@ -94,7 +94,23 @@ The following steps show the configuration with .env variables, but you can also
         - This email address must exist in your Exchange 365 environment
         - The application needs permission to send emails on behalf of this address
 
-6.  Configure save to sent items (optional).
+6.  Configure the Graph sender user ID (optional).
+
+    Set the Microsoft Graph mailbox/user ID that is used for the
+    ``/users/{id}/sendMail`` API call. This is intentionally separate from the
+    message **From** address, so you can send *as* or *on behalf of* a different
+    mailbox (Send As / Send On Behalf scenarios).
+
+    ..  code-block:: bash
+
+        TYPO3_CONF_VARS__MAIL__transport_exchange365_graphSenderUserId='shared-mailbox@your-domain.com'
+
+    ..  note::
+        - Leave empty to fall back to the message **From** address, then to ``fromEmail``, then to ``$GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromAddress']``
+        - The Azure application must be permitted to send for this mailbox
+        - The value can be a user principal name or the object ID of the mailbox
+
+7.  Configure save to sent items (optional).
 
     Determine whether sent emails should be saved to the sender's "Sent Items" folder.
 
@@ -132,6 +148,7 @@ You can configure these settings using a `.env` file in your TYPO3 root director
     TYPO3_CONF_VARS__MAIL__transport_exchange365_clientId='your-client-id-here'
     TYPO3_CONF_VARS__MAIL__transport_exchange365_clientSecret='your-client-secret-here'
     TYPO3_CONF_VARS__MAIL__transport_exchange365_fromEmail='service@your-domain.com'
+    TYPO3_CONF_VARS__MAIL__transport_exchange365_graphSenderUserId=''
     TYPO3_CONF_VARS__MAIL__transport_exchange365_saveToSentItems=1
 
 ..  _alternative-configuration-methods:
@@ -156,6 +173,7 @@ Alternatively, you can add these settings directly to your TYPO3 configuration f
             'transport_exchange365_clientId' => 'your-client-id-here',
             'transport_exchange365_clientSecret' => 'your-client-secret-here',
             'transport_exchange365_fromEmail' => 'service@your-domain.com',
+            'transport_exchange365_graphSenderUserId' => '',
             'transport_exchange365_saveToSentItems' => 1,
         ],
         
@@ -173,6 +191,7 @@ Or using the $GLOBALS syntax:
     $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_clientId'] = 'your-client-id-here';
     $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_clientSecret'] = 'your-client-secret-here';
     $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_fromEmail'] = 'service@your-domain.com';
+    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_graphSenderUserId'] = '';
     $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_saveToSentItems'] = 1;
 
 ..  attention::
