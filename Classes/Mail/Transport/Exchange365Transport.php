@@ -37,6 +37,8 @@ class Exchange365Transport extends AbstractTransport
      */
     public function doSend(SentMessage $message): void
     {
+        $graphSenderUserId = '';
+
         try {
             // Attempt to get configuration from TypoScript if in frontend context
             $conf = null;
@@ -51,6 +53,7 @@ class Exchange365Transport extends AbstractTransport
                 $conf['clientId'] = $this->mailSettings['transport_exchange365_clientId'] ?? '';
                 $conf['clientSecret'] = $this->mailSettings['transport_exchange365_clientSecret'] ?? '';
                 $conf['fromEmail'] = $this->mailSettings['transport_exchange365_fromEmail'] ?? '';
+                $conf['graphSenderUserId'] = $this->mailSettings['transport_exchange365_graphSenderUserId'] ?? '';
                 $conf['saveToSentItems'] = $this->mailSettings['transport_exchange365_saveToSentItems'] ?? '';
             }
 
@@ -74,20 +77,37 @@ class Exchange365Transport extends AbstractTransport
             $graph = new Graph();
             $graph->setAccessToken($accessToken);
 
-            // Get FROM email address
-            $confFromEmail = $message->getEnvelope()->getSender()->getAddress() ?? $conf['fromEmail'] ?? '';
+            // Resolve the mailbox used for the Graph /users/{id}/sendMail call.
+            // This is kept separate from the message From address so Send As /
+            // Send On Behalf scenarios can target a different mailbox than the
+            // visible sender. Empty strings must be treated as "unset", so use
+            // !empty() instead of a bare ?? chain.
+            $messageFrom = $message->getEnvelope()->getSender()->getAddress();
+            $graphSenderUserId = !empty($conf['graphSenderUserId'])
+                ? $conf['graphSenderUserId']
+                : (!empty($messageFrom)
+                    ? $messageFrom
+                    : (!empty($conf['fromEmail'])
+                        ? $conf['fromEmail']
+                        : ($GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromAddress'] ?? '')));
+
+            if (empty($graphSenderUserId)) {
+                throw new \RuntimeException('No Microsoft Graph sender user ID could be resolved. Configure graphSenderUserId, fromEmail, or TYPO3 MAIL.defaultMailFromAddress.');
+            }
 
             $rawMessage = $message->getMessage()->toString();
 
-            // Send the email using Microsoft Graph API
-            $urlSuffix = '/users/' . urlencode($confFromEmail) . '/sendMail';
+            // Send the email using Microsoft Graph API. The sendMail endpoint
+            // targets the resolved Graph mailbox; the visible From header stays
+            // in the raw MIME message untouched.
+            $urlSuffix = '/users/' . urlencode($graphSenderUserId) . '/sendMail';
             $graph->createRequest('POST', $urlSuffix)
                         ->addHeaders(['Content-Type' => 'text/plain'])
                         ->attachBody(base64_encode($rawMessage)) // $sendMailPostRequestBody)
                         ->execute();
 
         } catch (Exception $e) {
-            $this->logger->alert('Sending mail from ' . $confFromEmail . ' failed!');
+            $this->logger->alert('Sending mail' . ($graphSenderUserId ? ' via Graph sender ' . $graphSenderUserId : '') . ' failed!');
             throw new RuntimeException("Sending mail with Exchange365 mailer failed. Please check credentials setup." . $e->getMessage());
         }
 
