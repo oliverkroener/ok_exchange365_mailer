@@ -4,8 +4,8 @@ namespace OliverKroener\OkExchange365\Mail\Transport;
 
 use Exception;
 use Microsoft\Graph\Generated\Users\Item\SendMail\SendMailPostRequestBody;
-use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
 use Microsoft\Graph\GraphServiceClient;
+use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
 use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
@@ -14,7 +14,6 @@ use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
 class Exchange365Transport extends AbstractTransport
 {
@@ -109,7 +108,7 @@ class Exchange365Transport extends AbstractTransport
             $graphServiceClient->users()->byUserId($graphSenderUserId)->sendMail()->post($requestBody)->wait();
         } catch (Exception $e) {
             $this->logger->alert('Sending mail' . ($graphSenderUserId ? " via Graph sender {$graphSenderUserId}" : '') . ' failed!' . PHP_EOL . $e->getMessage());
-            throw new RuntimeException("Sending mail with Exchange365 mailer failed. Please check credentials setup." . PHP_EOL . $e->getMessage());
+            throw new RuntimeException('Sending mail with Exchange365 mailer failed. Please check credentials setup.' . PHP_EOL . $e->getMessage());
         }
 
         $this->logger->debug('Mail sent successfully with ' . self::class . ' via Graph sender ' . $graphSenderUserId);

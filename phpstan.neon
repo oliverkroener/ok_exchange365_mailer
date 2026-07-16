@@ -1,0 +1,27 @@
+# PHPStan configuration for ok_exchange365_mailer.
+#
+# Run from the parent project root (phpstan + saschaegerer/phpstan-typo3 are
+# installed there as dev dependencies):
+#
+#   ddev exec vendor/bin/phpstan analyse -c packages/ok_exchange365_mailer/phpstan.neon
+#
+# saschaegerer/phpstan-typo3 is auto-registered via phpstan/extension-installer.
+parameters:
+    level: 5
+    reportUnmatchedIgnoredErrors: false
+    paths:
+        - %currentWorkingDirectory%/packages/ok_exchange365_mailer/Classes
+        - %currentWorkingDirectory%/packages/ok_exchange365_mailer/ext_emconf.php
+        - %currentWorkingDirectory%/packages/ok_exchange365_mailer/ext_localconf.php
+    ignoreErrors:
+        # TYPO3 core defines $_EXTKEY when it includes ext_emconf.php.
+        -
+            message: '#Variable \$_EXTKEY might not be defined\.#'
+            path: %currentWorkingDirectory%/packages/ok_exchange365_mailer/ext_emconf.php
+        # TYPO3's TransportFactory instantiates the transport positionally as
+        # ($mailSettings, $dispatcher, $logger). The $dispatcher argument is
+        # unused here (TYPO3 11 needs the EventDispatcherAdapter shim instead),
+        # but the parameter must stay so $logger lands in the right slot.
+        -
+            message: '#Constructor of class OliverKroener\\OkExchange365\\Mail\\Transport\\Exchange365Transport has an unused parameter \$dispatcher\.#'
+            path: %currentWorkingDirectory%/packages/ok_exchange365_mailer/Classes/Mail/Transport/Exchange365Transport.php
