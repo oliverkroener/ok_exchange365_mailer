@@ -65,23 +65,39 @@ Microsoft Exchange 365 Mailer
     :class: pb-4
     :card-height: 100
 
-    ..  card:: :ref:`Installation <installation>`
+    ..  card:: Installation
 
         Explains how to install this extension in Composer-based and Classic
         TYPO3 installations.
 
-    ..  card:: :ref:`Configuration Microsoft Entra ID <azure>`
+        ..  card-footer:: :ref:`Get started <installation>`
+            :button-style: btn btn-primary
 
-        Learn how to configure Microsoft Entra ID (formerly Microsoft AD) for this extension.
-        
-    ..  card:: :ref:`Configuration <configuration>`
+    ..  card:: Microsoft Entra ID
 
-        Learn how to configure this extension.
+        Learn how to configure Microsoft Entra ID (formerly Microsoft AD) for
+        this extension.
 
-    ..  card:: :ref:`Frequently Asked Questions (FAQ) <faq>`
+        ..  card-footer:: :ref:`Set up Azure <azure>`
+            :button-style: btn btn-primary
 
-        These questions have been frequently asked.
+    ..  card:: Configuration
 
-    ..  card:: :ref:`How to get help <help>`
+        Learn how to configure this extension for backend and frontend mail.
+
+        ..  card-footer:: :ref:`Configure <configuration>`
+            :button-style: btn btn-primary
+
+    ..  card:: FAQ
+
+        Answers to questions that have been frequently asked.
+
+        ..  card-footer:: :ref:`Read the FAQ <faq>`
+            :button-style: btn btn-primary
+
+    ..  card:: How to get help
 
         Learn where to get help and how to report issues you found.
+
+        ..  card-footer:: :ref:`Get help <help>`
+            :button-style: btn btn-primary
