@@ -16,13 +16,16 @@ use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
 class Exchange365Transport extends AbstractTransport
 {
+    /**
+     * @var array<string, mixed>
+     */
     private array $mailSettings;
     private LoggerInterface $logger;
 
     /**
      * Constructor for Exchange365Transport
      *
-     * @param array $mailSettings Mail configuration settings
+     * @param array<string, mixed> $mailSettings Mail configuration settings
      * @param EventDispatcherInterface|null $dispatcher Event dispatcher instance (optional)
      * @param LoggerInterface|null $logger Logger instance (optional)
      */
@@ -105,7 +108,7 @@ class Exchange365Transport extends AbstractTransport
     /**
      * Get configuration from TypoScript or mail settings
      *
-     * @return array
+     * @return array<string, mixed>
      * @throws \RuntimeException
      */
     private function getConfiguration(): array
@@ -128,7 +131,7 @@ class Exchange365Transport extends AbstractTransport
     /**
      * Get configuration from TypoScript (TYPO3 12 compatible)
      *
-     * @return array|null
+     * @return array<string, mixed>|null
      */
     private function getTypoScriptConfiguration(): ?array
     {
@@ -159,7 +162,7 @@ class Exchange365Transport extends AbstractTransport
     /**
      * Get configuration from mail settings
      *
-     * @return array
+     * @return array<string, mixed>
      */
     private function getMailSettingsConfiguration(): array
     {
@@ -176,7 +179,7 @@ class Exchange365Transport extends AbstractTransport
     /**
      * Validate required configuration values
      *
-     * @param array $conf
+     * @param array<string, mixed> $conf
      * @throws \RuntimeException
      */
     private function validateConfiguration(array $conf): void

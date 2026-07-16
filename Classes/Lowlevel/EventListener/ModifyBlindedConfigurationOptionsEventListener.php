@@ -19,6 +19,9 @@ final class ModifyBlindedConfigurationOptionsEventListener
         $event->setBlindedConfigurationOptions($options);
     }
 
+    /**
+     * @var list<string>
+     */
     private static $blindedMailSettings = [
         'transport_exchange365_clientId',
         'transport_exchange365_tenantId',
@@ -28,8 +31,8 @@ final class ModifyBlindedConfigurationOptionsEventListener
     /**
      * Blind exchange 365 credentials in ConfigurationOptions
      *
-     * @param array $blindedConfigurationOptions
-     * @return array
+     * @param array<string, mixed> $blindedConfigurationOptions
+     * @return array<string, mixed>
      */
     public function modifyBlindedConfigurationOptions(array $blindedConfigurationOptions): array
     {

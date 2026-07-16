@@ -1,0 +1,20 @@
+# PHPStan configuration for ok_exchange365_mailer.
+#
+# Run from the parent project root (phpstan + saschaegerer/phpstan-typo3 are
+# installed there as dev dependencies):
+#
+#   ddev exec vendor/bin/phpstan analyse -c packages/ok_exchange365_mailer/phpstan.neon
+#
+# saschaegerer/phpstan-typo3 is auto-registered via phpstan/extension-installer.
+parameters:
+    level: 8
+    paths:
+        - %currentWorkingDirectory%/packages/ok_exchange365_mailer/Classes
+        - %currentWorkingDirectory%/packages/ok_exchange365_mailer/Configuration
+        - %currentWorkingDirectory%/packages/ok_exchange365_mailer/ext_emconf.php
+        - %currentWorkingDirectory%/packages/ok_exchange365_mailer/ext_localconf.php
+    ignoreErrors:
+        # TYPO3 core defines $_EXTKEY when it includes ext_emconf.php.
+        -
+            message: '#Variable \$_EXTKEY might not be defined\.#'
+            path: %currentWorkingDirectory%/packages/ok_exchange365_mailer/ext_emconf.php
