@@ -3,7 +3,7 @@
 [![TYPO3 11](https://img.shields.io/badge/TYPO3-11-orange?logo=typo3)](https://get.typo3.org/version/11)
 [![PHP 7.4+](https://img.shields.io/badge/PHP-7.4%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2%2B-blue)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
-[![Version](https://img.shields.io/badge/version-3.1.1-green)](https://github.com/oliverkroener/ok_exchange365_mailer)
+[![Version](https://img.shields.io/badge/version-3.1.2-green)](https://github.com/oliverkroener/ok_exchange365_mailer)
 [![Microsoft Graph](https://img.shields.io/badge/Microsoft%20Graph-API%20v2-0078D4?logo=microsoft)](https://learn.microsoft.com/en-us/graph/overview)
 
 Send TYPO3 emails through Microsoft Exchange 365 using the Microsoft Graph API and OAuth2 — **without enabling SMTP**.
