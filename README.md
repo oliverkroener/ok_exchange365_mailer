@@ -5,7 +5,7 @@
 [![TYPO3 14](https://img.shields.io/badge/TYPO3-14-orange?logo=typo3)](https://get.typo3.org/version/14)
 [![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2%2B-blue)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
-[![Version](https://img.shields.io/badge/version-4.2.0-green)](https://github.com/oliverkroener/ok_exchange365_mailer)
+[![Version](https://img.shields.io/badge/version-4.2.1-green)](https://github.com/oliverkroener/ok_exchange365_mailer)
 
 A TYPO3 extension for sending emails via Microsoft Exchange 365 using the MS Graph API instead of SMTP. Uses OAuth 2.0 client credentials flow for secure, token-based authentication.
 
@@ -140,6 +140,15 @@ Configuration/
     ├── constants.typoscript
     └── setup.typoscript
 ```
+
+## Changelog
+
+- **Inline images (`cid:`) fix** — broken inline images in received mails were
+  caused by Microsoft Graph not carrying over the `Content-ID` of inline
+  attachments. Fixed in the related dependency
+  `oliverkroener/ok-typo3-helper` **3.1.2** (`MSGraphMailApiService` now sets
+  the attachment's `Content-ID`). No change needed here — ensure
+  `ok-typo3-helper` is `>= 3.1.2`; the `^3` constraint already allows it.
 
 ## License
 
