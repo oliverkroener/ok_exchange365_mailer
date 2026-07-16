@@ -7,12 +7,10 @@ use Microsoft\Graph\Graph;
 use RuntimeException;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\SentMessage;
-use Symfony\Component\Mailer\Transport\TransportInterface;
-use Symfony\Component\Mime\RawMessage;
-use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Log\LogManager;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
+use Symfony\Component\Mime\RawMessage;
+use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class Exchange365Transport extends AbstractTransport
 {
@@ -20,7 +18,7 @@ class Exchange365Transport extends AbstractTransport
     private $mailSettings;
     private $logger;
 
-    public function  __construct(array $mailSettings)
+    public function __construct(array $mailSettings)
     {
         $this->mailSettings = $mailSettings;
         // Initialize the logger using TYPO3's logging system
@@ -105,10 +103,9 @@ class Exchange365Transport extends AbstractTransport
                         ->addHeaders(['Content-Type' => 'text/plain'])
                         ->attachBody(base64_encode($rawMessage)) // $sendMailPostRequestBody)
                         ->execute();
-
         } catch (Exception $e) {
             $this->logger->alert('Sending mail' . ($graphSenderUserId ? ' via Graph sender ' . $graphSenderUserId : '') . ' failed!');
-            throw new RuntimeException("Sending mail with Exchange365 mailer failed. Please check credentials setup." . $e->getMessage());
+            throw new RuntimeException('Sending mail with Exchange365 mailer failed. Please check credentials setup.' . $e->getMessage());
         }
 
         $this->logger->debug('Mail sent successfully with ' . self::class);

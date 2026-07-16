@@ -2,10 +2,10 @@
 
 defined('TYPO3_MODE') || die();
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use OliverKroener\OkExchange365\Mail\Exchange365Mailer;
-use TYPO3\CMS\Core\Mail\MailerInterface;
 use TYPO3\CMS\Core\DependencyInjection\Container;
+use TYPO3\CMS\Core\Mail\MailerInterface;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 // Register your custom mailer as the default mailer service
 call_user_func(function () {
