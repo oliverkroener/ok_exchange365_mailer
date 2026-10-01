@@ -1,0 +1,27 @@
+# PHPStan configuration used by the cross-version test matrix.
+#
+# Unlike the repository-root phpstan.neon (which is written for the monorepo layout
+# and only resolves from a parent project root), every path here is relative to THIS
+# file, so the config works wherever the package is mounted - including the labs,
+# where it lives at /var/www/ext-src/Build/phpstan.neon.
+#
+#   Build/Scripts/runTests.sh --layers=phpstan
+#
+# The level is supplied per TYPO3 major from Build/matrix.json, because the
+# maintenance branches predate the typed-property style main is written in.
+parameters:
+    level: 8
+    paths:
+        - ../Classes
+        - ../Configuration
+        - ../ext_emconf.php
+        - ../ext_localconf.php
+    # %rootDir% is vendor/phpstan/phpstan, so this resolves to the lab's vendor/autoload.php
+    # and gives the analysis the TYPO3 core classes of whichever major is under test.
+    bootstrapFiles:
+        - %rootDir%/../../autoload.php
+    ignoreErrors:
+        # TYPO3 core defines $_EXTKEY when it includes ext_emconf.php.
+        -
+            message: '#Variable \$_EXTKEY might not be defined\.#'
+            path: ../ext_emconf.php

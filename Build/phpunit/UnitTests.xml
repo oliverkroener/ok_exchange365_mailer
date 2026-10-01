@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Unit test suite for ok_exchange365_mailer.
+
+    Deliberately minimal: only attributes that exist unchanged in PHPUnit 9, 10 and
+    11 are used, so ONE committed file serves every branch - PHPUnit 9.6 on the
+    TYPO3 10/11 lines, 10.5 on TYPO3 12, 11.5 on TYPO3 13/14.
+
+    backupGlobals is on because the transport reads $GLOBALS['TYPO3_REQUEST'] and
+    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromAddress'].
+-->
+<phpunit
+    bootstrap="bootstrap.php"
+    cacheResult="false"
+    colors="true"
+    backupGlobals="true"
+    failOnRisky="true"
+    failOnWarning="true"
+    beStrictAboutTestsThatDoNotTestAnything="true"
+>
+    <php>
+        <env name="OK_EXCHANGE365_TEST_SUITE" value="Unit"/>
+    </php>
+    <testsuites>
+        <testsuite name="ok_exchange365_mailer unit tests">
+            <directory>../../Tests/Unit/</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

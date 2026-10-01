@@ -34,6 +34,18 @@
             "OliverKroener\\OkExchange365\\": "Classes/"
         }
     },
+    "require-dev": {
+        "typo3/testing-framework": "^7.1",
+        "phpunit/phpunit": "^9.6"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "OliverKroener\\OkExchange365\\Tests\\": "Tests/"
+        }
+    },
+    "scripts": {
+        "test:unit": "phpunit -c Build/phpunit/UnitTests.xml"
+    },
     "extra": {
         "typo3/cms": {
             "extension-key": "ok_exchange365_mailer"
