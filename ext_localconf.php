@@ -2,16 +2,6 @@
 
 defined('TYPO3_MODE') || die();
 
-use OliverKroener\OkExchange365\Mail\Exchange365Mailer;
-use TYPO3\CMS\Core\DependencyInjection\Container;
-use TYPO3\CMS\Core\Mail\MailerInterface;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-
-// Register your custom mailer as the default mailer service
-call_user_func(function () {
-    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailer'] = Exchange365Mailer::class;
-
-    // Override the default mailer service with your custom implementation
-    //$container = GeneralUtility::makeInstance(Container::class);
-    //$container->registerImplementation(MailerInterface::class, CustomMailer::class);
-});
+// Blind the Exchange 365 credentials in System > Configuration
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][\TYPO3\CMS\Lowlevel\Controller\ConfigurationController::class]['modifyBlindedConfigurationOptions'][]
+    = \OliverKroener\OkExchange365\Hook\BlindedConfigurationOptionsHook::class;

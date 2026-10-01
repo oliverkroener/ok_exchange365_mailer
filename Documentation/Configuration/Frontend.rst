@@ -2,278 +2,215 @@
 
 ..  _frontend:
 
-====================
+======================
 Frontend Configuration
-====================
+======================
 
-The Exchange 365 Mailer extension supports frontend email sending through popular TYPO3 extensions like **Powermail**, **Form Framework**, and other form extensions. This requires additional TypoScript configuration to work properly.
+Mails sent from the frontend — by the **Form Framework**, **Powermail** or any other
+extension that uses TYPO3's mailer — go through the same transport as backend and CLI
+mails. In the frontend, the transport additionally reads TypoScript, so a site can use
+its own credentials or sender.
 
-..  attention::
-    Frontend configuration is **required** for any page that uses forms or email functionality. Without proper TypoScript setup, frontend forms will not be able to send emails through Exchange 365.
+How frontend configuration works
+================================
 
-Frontend Configuration Overview
-===============================
+The transport itself is always selected in :php:`$GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport']`
+(see :ref:`essential`). TypoScript cannot switch the transport; there is no
+``config.mail.transport`` option.
 
-Frontend email sending requires the same 5 core parameters as the backend configuration, but they must be configured via **TypoScript** instead of environment variables or LocalConfiguration.php.
+For the credentials and the sender, TypoScript **overlays** the
+``$GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_*']`` settings **per
+parameter**:
+
+*   A parameter with a value in TypoScript wins.
+*   A parameter that is empty in TypoScript falls back to ``TYPO3_CONF_VARS``.
+
+So if the credentials are already configured for the backend, the frontend needs no
+TypoScript at all. Add TypoScript only where a site should differ.
 
 ..  figure:: /_Images/image-frontend.png
     :alt: TYPO3 TypoScript configuration showing Exchange365 frontend parameters
     :class: with-shadow
     :scale: 100
 
-Required TypoScript Parameters
-==============================
+..  _frontend-getenv:
 
-The following 5 parameters must be configured in your TypoScript setup for frontend email functionality. A 6th optional parameter (`graphSenderUserId`) enables Send As / Send On Behalf:
+Recommended: read the credentials from the environment
+======================================================
 
-..  rst-class:: bignums-xxl
+Never write the tenant ID, client ID or client secret into TypoScript. TypoScript is
+stored in the database or in a site package, both of which end up in backups,
+exports and version control. Read them from environment variables with the
+TypoScript function ``getEnv()`` instead:
 
-1.  **Transport Class Configuration**
+..  code-block:: typoscript
+    :caption: setup.typoscript
 
-    Set the mail transport to use the Exchange365Transport class for frontend operations.
+    plugin.tx_okexchange365mailer.settings.exchange365 {
+        tenantId := getEnv(EXCHANGE365_TENANT_ID)
+        clientId := getEnv(EXCHANGE365_CLIENT_ID)
+        clientSecret := getEnv(EXCHANGE365_CLIENT_SECRET)
+        fromEmail := getEnv(EXCHANGE365_FROM_EMAIL)
+    }
 
-    ..  code-block:: typoscript
+The same works for constants, if you prefer to set them in
+:file:`constants.typoscript` and keep the static template's mapping:
 
-        config.mail.transport = OliverKroener\OkExchange365\Mail\Transport\Exchange365Transport
+..  code-block:: typoscript
+    :caption: constants.typoscript
 
-    ..  note::
-        This tells TYPO3 to use the Exchange 365 transport instead of the default SMTP transport for frontend emails.
+    plugin.tx_okexchange365mailer.settings.exchange365.clientSecret := getEnv(EXCHANGE365_CLIENT_SECRET)
 
-2.  **Tenant ID**
+Then provide the variables to the PHP process, for example:
 
-    Configure your Microsoft Entra ID tenant identifier.
+..  code-block:: bash
+    :caption: .env (DDEV: .ddev/.env.web)
 
-    ..  code-block:: typoscript
+    EXCHANGE365_TENANT_ID=00000000-0000-0000-0000-000000000000
+    EXCHANGE365_CLIENT_ID=00000000-0000-0000-0000-000000000000
+    EXCHANGE365_CLIENT_SECRET=your-client-secret-value
+    EXCHANGE365_FROM_EMAIL=service@your-domain.com
 
-        plugin.tx_okexchange365mailer.settings.exchange365.tenantId = your-tenant-id-here
+..  important::
+    **Three things to know about** ``getEnv()``. All three are verified by the
+    extension's :ref:`test matrix <testing>` on TYPO3 v10.
 
-    ..  attention::
-        Replace `your-tenant-id-here` with the actual Tenant ID from your :ref:`Azure Configuration <azure>` (step 4).
+    *   **It reads the real process environment.** ``getEnv()`` calls PHP's
+        :php:`getenv()`. A variable that is only loaded into :php:`$_ENV` — which
+        is what ``symfony/dotenv`` and ``helhum/dotenv-connector`` do by default —
+        is **invisible** to it. Set the variable where the web server starts PHP
+        (DDEV ``web_environment`` or :file:`.ddev/.env.web`, an ``env[...]`` line in
+        the PHP-FPM pool, ``SetEnv`` in Apache, the container environment), or
+        configure the dotenv loader to use ``putenv()``.
+    *   **An unset variable keeps the previous value.** If the variable does not
+        exist, ``getEnv()`` leaves the property unchanged — it does **not** empty
+        it. Clear the property first if a missing variable must not fall back to an
+        earlier value:
 
-3.  **Client ID**
+        ..  code-block:: typoscript
 
-    Set your Azure application's client identifier.
+            plugin.tx_okexchange365mailer.settings.exchange365.clientSecret =
+            plugin.tx_okexchange365mailer.settings.exchange365.clientSecret := getEnv(EXCHANGE365_CLIENT_SECRET)
 
-    ..  code-block:: typoscript
+        The empty value then falls back to ``TYPO3_CONF_VARS``. If that is empty
+        too, sending fails with
+        ``Exchange 365 configuration missing required field: clientSecret``.
+    *   **The value is cached.** TypoScript is parsed once and cached. After
+        changing an environment variable, flush the caches.
 
-        plugin.tx_okexchange365mailer.settings.exchange365.clientId = your-client-id-here
+TypoScript parameters
+=====================
 
-    ..  attention::
-        Replace `your-client-id-here` with the actual Client ID from your :ref:`Azure Configuration <azure>` (step 4).
+All parameters live below ``plugin.tx_okexchange365mailer.settings.exchange365``.
+Include the static template **[kroener.DIGITAL] Exchange 365 Mailer** to get the
+Constant Editor entries (category *exchange365mailer*). Its defaults are all empty,
+so including it changes nothing until you set a value.
 
-4.  **Client Secret**
+..  list-table::
+    :header-rows: 1
+    :widths: 22 78
 
-    Configure the Azure application's client secret.
+    *   -   Parameter
+        -   Meaning
+    *   -   ``tenantId``
+        -   Microsoft Entra ID tenant ID (:ref:`Azure Configuration <azure>`, step 4).
+            Use ``:= getEnv(...)``.
+    *   -   ``clientId``
+        -   Application (client) ID of the app registration (step 4).
+            Use ``:= getEnv(...)``.
+    *   -   ``clientSecret``
+        -   The secret **Value** of the app registration (step 7).
+            Always use ``:= getEnv(...)``.
+    *   -   ``fromEmail``
+        -   Sender address used when a mail has no From address. Must be a user
+            or shared mailbox in your tenant.
+    *   -   ``graphSenderUserId``
+        -   Optional. The mailbox the Graph call ``/users/{id}/sendMail`` is made
+            through, when it differs from the visible From address (*Send As* /
+            *Send On Behalf*). Falls back to the message From address, then
+            ``fromEmail``, then ``MAIL.defaultMailFromAddress``. See
+            `Send mail from another user <https://learn.microsoft.com/en-us/graph/outlook-send-mail-from-other-user>`__.
 
-    ..  code-block:: typoscript
+..  note::
+    There is no ``saveToSentItems`` parameter on this version. The 2.x line posts
+    the raw MIME message to Graph, and Graph then always saves a copy in *Sent
+    Items*.
 
-        plugin.tx_okexchange365mailer.settings.exchange365.clientSecret = your-client-secret-here
+Per-environment credentials
+===========================
 
-    ..  warning::
-        - Replace `your-client-secret-here` with the actual Secret **Value** from your :ref:`Azure Configuration <azure>` (step 7)
-        - **Security Risk**: TypoScript is visible in the frontend source. Consider using :ref:`essential` with environment variables for production
-        - Never expose this value in public repositories or frontend debugging
+Use different environment variables per environment rather than TypoScript
+conditions with literal IDs — the TypoScript stays identical everywhere and only
+the server configuration differs:
 
-5.  **From Email Address**
+..  code-block:: bash
 
-    Set the sender email address for frontend-generated emails.
+    # staging server
+    EXCHANGE365_CLIENT_ID=staging-app-id
+    EXCHANGE365_CLIENT_SECRET=staging-secret
 
-    ..  code-block:: typoscript
+    # production server
+    EXCHANGE365_CLIENT_ID=production-app-id
+    EXCHANGE365_CLIENT_SECRET=production-secret
 
-        plugin.tx_okexchange365mailer.settings.exchange365.fromEmail = service@your-domain.com
-
-    ..  note::
-        - Replace `service@your-domain.com` with a valid email address from your Exchange 365 environment
-        - This email must exist as a **SharedMailbox** or **User Mailbox** in your organization
-        - If not specified, falls back to `config.mail.defaultMailFromAddress`
-
-6.  **Graph Sender User ID** (optional — Send As / Send On Behalf)
-
-    Set the Microsoft Graph mailbox/user ID used for the API call. It is resolved **separately**
-    from the message **From** address, so you can send *as* or *on behalf of* a different mailbox.
-
-    ..  code-block:: typoscript
-
-        plugin.tx_okexchange365mailer.settings.exchange365.graphSenderUserId = shared-mailbox@your-domain.com
-
-    ..  note::
-        - Leave empty to fall back to the message **From** address, then to `fromEmail`, then to `config.mail.defaultMailFromAddress`
-        - The Azure application must be permitted to send as / on behalf of this mailbox
-
-Complete TypoScript Configuration Example
-==========================================
-
-Here's a complete TypoScript setup example for frontend email functionality:
+A different sender per site is a plain value, not a secret, so it can live in
+TypoScript directly:
 
 ..  code-block:: typoscript
 
-    # Exchange 365 Frontend Mail Configuration
-    config {
-        mail {
-            # Set transport to Exchange 365
-            transport = OliverKroener\OkExchange365\Mail\Transport\Exchange365Transport
-            
-            # Optional: Default mail settings
-            defaultMailFromAddress = service@your-domain.com
-            defaultMailFromName = Your Organization Name
-        }
-    }
+    [site("identifier") == "shop"]
+        plugin.tx_okexchange365mailer.settings.exchange365.fromEmail = shop@your-domain.com
+    [END]
 
-    # Exchange 365 specific configuration
-    plugin.tx_okexchange365mailer {
-        settings {
-            exchange365 {
-                # Azure/Microsoft Entra ID Configuration
-                tenantId = your-tenant-id-here
-                clientId = your-client-id-here
-                clientSecret = your-client-secret-here
-                
-                # Email Configuration
-                fromEmail = service@your-domain.com
-
-                # Optional: Send As / Send On Behalf (defaults to fromEmail when empty)
-                graphSenderUserId = shared-mailbox@your-domain.com
-            }
-        }
-    }
-
-Integration with Form Extensions
+Integration with form extensions
 ================================
 
-Powermail Integration
----------------------
-
-When using **Powermail**, the extension will automatically use the configured Exchange 365 transport for sending emails:
-
-..  code-block:: typoscript
-
-    plugin.tx_powermail {
-        settings {
-            setup {
-                # Powermail will use the global mail configuration
-                # No additional configuration needed
-            }
-        }
-    }
-
-TYPO3 Form Framework Integration
---------------------------------
-
-For the **TYPO3 Form Framework**, ensure your form configuration references the global mail settings:
+**Form Framework**, **Powermail** and other extensions use TYPO3's mailer and
+therefore this transport automatically. They need no extra configuration; their
+own sender settings become the message From address.
 
 ..  code-block:: yaml
 
-    # In your form configuration (YAML)
     finishers:
       -
         identifier: EmailToReceiver
         options:
-          # Uses global mail configuration automatically
           recipientAddress: 'recipient@example.com'
           recipientName: 'Recipient Name'
 
-Configuration File Locations
-=============================
-
-Place your TypoScript configuration in one of these locations:
-
-**Template Records**
-    Add the configuration to your main TypoScript template record in the TYPO3 backend.
-
-**Static Files**
-    Create or modify files in your site package:
-    
-    - `Configuration/TypoScript/setup.typoscript`
-    - `Configuration/TypoScript/constants.typoscript` (for constants)
-
-**Page TSconfig** (Not recommended for mail settings)
-    Only use for page-specific overrides, not for global mail configuration.
-
-
-Security Considerations for Frontend
-====================================
+Security considerations
+=======================
 
 ..  danger::
-    **TypoScript Security Warning**
-    
-    TypoScript configuration is potentially visible in frontend source code and through various debugging tools:
-    
-    - **Client Secret Exposure**: Never use sensitive secrets in TypoScript on production sites
-    - **Recommended Approach**: Use :ref:`essential` with environment variables
-    - **Alternative**: Use TYPO3's encrypted configuration features for sensitive data
-    - **Monitoring**: Regularly audit your TypoScript for exposed credentials
+    *   **Never write the client secret into TypoScript** — neither in a template
+        record nor in a site package. Use ``:= getEnv(...)`` or
+        ``TYPO3_CONF_VARS`` filled from the environment.
+    *   TypoScript is not sent to the browser, but it **is** readable in the
+        backend (*Web > Template*) by every user with access to that module, and
+        it is part of every database dump.
+    *   In *System > Configuration*, the extension masks the tenant ID, client ID
+        and client secret held in ``TYPO3_CONF_VARS``. Values set in TypoScript
+        are not masked.
 
-Best Practices
-==============
+Troubleshooting
+===============
 
-1. **Environment-Specific Configuration**
-   
-   Use different Azure applications for different environments:
-   
-   ..  code-block:: typoscript
-   
-       [applicationContext == "Development"]
-           plugin.tx_okexchange365mailer.settings.exchange365.clientId = dev-client-id
-           plugin.tx_okexchange365mailer.settings.exchange365.tenantId = dev-tenant-id
-       [END]
-       
-       [applicationContext == "Production"]
-           plugin.tx_okexchange365mailer.settings.exchange365.clientId = prod-client-id
-           plugin.tx_okexchange365mailer.settings.exchange365.tenantId = prod-tenant-id
-       [END]
+**"Exchange 365 configuration missing required field: …"**
+    The parameter is empty in TypoScript **and** in ``TYPO3_CONF_VARS``. With
+    ``getEnv()``, the variable is most likely not in the PHP process environment —
+    see the note on :php:`getenv()` above. Run
+    ``php -r 'var_dump(getenv("EXCHANGE365_CLIENT_SECRET"));'`` in the same
+    environment as the web server to check.
 
-2. **Conditional Loading**
-   
-   Only load Exchange 365 configuration when needed:
-   
-   ..  code-block:: typoscript
-   
-       [siteIdentifier == "main-site"]
-           <INCLUDE_TYPOSCRIPT: source="FILE:EXT:site_package/Configuration/TypoScript/exchange365.typoscript">
-       [END]
+**Old credentials still used after a change**
+    Flush the caches — TypoScript, including ``getEnv()`` results, is cached.
 
-3. **Fallback Configuration**
-   
-   Always provide fallback settings:
-   
-   ..  code-block:: typoscript
-   
-       config.mail {
-           defaultMailFromAddress = fallback@your-domain.com
-           defaultMailFromName = Fallback Sender
-       }
+**Authentication errors (AADSTS…)**
+    Tenant ID or client ID is wrong, or the client secret has expired.
 
-Testing Frontend Configuration
-==============================
-
-To test your frontend configuration:
-
-1. **Create a test form** using Powermail or Form Framework
-2. **Submit the form** and verify email delivery
-3. **Check TYPO3 logs** for any authentication or sending errors
-
-..  tip::
-    Use TYPO3's mail spooling functionality during development to prevent sending actual emails while testing configuration.
-
-Troubleshooting Frontend Issues
-===============================
-
-Common issues and solutions:
-
-**Emails not sending**
-    - Verify all 5 parameters are correctly configured in TypoScript
-    - Check that the Azure application has proper permissions
-    - Ensure the sender email exists in Exchange 365
-
-**Authentication errors**
-    - Verify Tenant ID and Client ID are correct
-    - Check that the Client Secret is valid and not expired
-    - Confirm Azure admin consent has been granted
-
-**Permission errors**
-    - Ensure the Azure application has `Mail.Send` permission
-    - Verify the sender email address exists in your Exchange 365 environment
-    - Check that the application can send on behalf of the specified user
+**Permission errors (403)**
+    The app registration lacks the ``Mail.Send`` application permission or admin
+    consent, or the sender mailbox is outside an application access policy.
 
 ..  seealso::
     For backend configuration details, see :ref:`Essential Configuration <essential>`.

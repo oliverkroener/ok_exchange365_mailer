@@ -31,23 +31,25 @@ The extension requires the following key configuration variables:
 For detailed step-by-step instructions, see:
 
 - :ref:`Essential Configuration <essential>` - For server-side email sending (recommended for production)
-- :ref:`Frontend Configuration <frontend>` - For form-based email sending (Powermail, Form Framework)
+- :ref:`Frontend Configuration <frontend>` - Optional per-site TypoScript overrides for frontend mail (Powermail, Form Framework)
 
 Configuration Methods
-====================
+=====================
 
-You can configure this extension using:
+The transport is selected only in ``$GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport']``.
+The credentials and sender can come from:
 
-**Essential Configuration** (Recommended)
-    - Environment variables (`.env` file)
-    - TYPO3 LocalConfiguration.php
-    - TYPO3 Admin Panel (if available)
+**Essential Configuration** (baseline for every context)
+    - Environment variables, mapped onto ``TYPO3_CONF_VARS`` by your project
+    - :file:`AdditionalConfiguration.php` reading the environment
 
-**Frontend Configuration** (For Forms)
-    - TypoScript configuration
-    - Required for Powermail, Form Framework, and other frontend forms
+**Frontend Configuration** (optional per-site overrides)
+    - TypoScript, ideally with ``:= getEnv(...)``. Non-empty TypoScript values
+      override ``TYPO3_CONF_VARS`` per setting; empty values fall back.
 
-Choose the method that best fits your deployment workflow and security requirements.
+If ``TYPO3_CONF_VARS`` is configured, frontend forms (Powermail, Form Framework)
+work without any TypoScript.
 
 ..  attention::
-    **Security Recommendation**: Use backend configuration with environment variables for production environments to avoid exposing sensitive Azure credentials in TypoScript.
+    **Security Recommendation**: Never write the client secret as a literal value
+    into TypoScript or configuration files. Read it from the environment.
