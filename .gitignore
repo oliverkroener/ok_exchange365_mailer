@@ -1,2 +1,11 @@
 Documentation-GENERATED-temp
 .php-cs-fixer.cache
+
+# Cross-version test matrix
+/Build/reports/
+/Build/testing/.env.test
+/Build/testing/browser/node_modules/
+/.phpunit.cache/
+.phpunit.result.cache
+.testlab-canary-*
+/vendor/

@@ -44,17 +44,16 @@ Configuration Methods
 You can configure this extension using:
 
 **Essential Configuration** (Recommended)
-    - Environment variables (`.env` file)
-    - TYPO3 :file:`config/system/settings.php`
-    - TYPO3 Admin Panel (if available)
+    - ``$GLOBALS['TYPO3_CONF_VARS']['MAIL']``, filled from environment variables
+    - Applies to backend, CLI, scheduler and frontend
 
 **Site Set** (TYPO3 v13 and v14, for Forms)
     - Activated per site, edited in :guilabel:`Site Management > Sites`
     - The modern replacement for the static TypoScript template
 
-**Frontend Configuration** (TYPO3 v12, for Forms)
-    - TypoScript configuration via the static template
-    - Required for Powermail, Form Framework, and other frontend forms
+**Frontend Configuration** (TypoScript, all versions)
+    - Optional per-site overrides via the static template
+    - Read secrets with ``:= getEnv(...)`` — never write them into TypoScript
 
 Choose the method that best fits your deployment workflow and security requirements.
 

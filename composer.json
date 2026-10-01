@@ -33,6 +33,29 @@
             "OliverKroener\\OkExchange365\\": "Classes/"
         }
     },
+    "support": {
+        "issues": "https://github.com/oliverkroener/ok_exchange365_mailer/issues",
+        "source": "https://github.com/oliverkroener/ok_exchange365_mailer",
+        "docs": "https://docs.typo3.org/p/oliverkroener/ok-exchange365-mailer/main/en-us/",
+        "forum": "https://github.com/oliverkroener/ok_exchange365_mailer/discussions"
+    },
+    "require-dev": {
+        "typo3/testing-framework": "^8.3.3 || ^9.1",
+        "phpunit/phpunit": "^10.5 || ^11.5"
+    },
+    "suggest": {
+        "typo3/cms-lowlevel": "Blinds the Exchange 365 credentials in the backend Configuration module."
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "OliverKroener\\OkExchange365\\Tests\\": "Tests/"
+        }
+    },
+    "scripts": {
+        "test:unit": "phpunit -c Build/phpunit/UnitTests.xml",
+        "test:functional": "phpunit -c Build/phpunit/FunctionalTests.xml",
+        "test:matrix": "Build/Scripts/runTests.sh"
+    },
     "extra": {
         "typo3/cms": {
             "extension-key": "ok_exchange365_mailer"

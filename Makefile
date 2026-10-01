@@ -27,3 +27,23 @@ docs-watch: ## Watch for changes and regenerate docs automatically
 .PHONY: watch-install
 watch-install: ## Install inotify-tools for file watching (Ubuntu/Debian)
 	sudo apt-get update && sudo apt-get install -y inotify-tools
+.PHONY: test-matrix
+test-matrix: ## Run the cross-version test matrix (TYPO3 9-14, one branch each) in disposable DDEV labs
+	Build/Scripts/runTests.sh
+
+.PHONY: test-matrix-live
+test-matrix-live: ## Same, plus real Microsoft Graph sends (CLI + frontend getEnv) and the browser check per major
+	Build/Scripts/runTests.sh --live
+
+.PHONY: test-matrix-status
+test-matrix-status: ## Show the state of each test lab
+	Build/Scripts/runTests.sh --status
+
+.PHONY: install-hooks
+install-hooks: ## Gate tag pushes on a green matrix (all worktrees of this clone)
+	git config core.hooksPath "$(CURDIR)/.githooks"
+	@echo "pre-push hook enabled: pushing a tag now runs the matrix for its branch."
+
+.PHONY: test-matrix-clean
+test-matrix-clean: ## Delete every test lab, DDEV project and git worktree the matrix created
+	Build/Scripts/runTests.sh --destroy

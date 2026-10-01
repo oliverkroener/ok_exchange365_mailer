@@ -76,7 +76,30 @@ The set's labels are inline English strings in `settings.definitions.yaml`. TYPO
 
 ## Development Commands
 
-There is **no test suite**. PHP tooling runs **through DDEV from the parent project root** (`/home/oliver/typo3-14`), where `phpstan/phpstan`, `saschaegerer/phpstan-typo3` and `typo3/coding-standards` are shared dev dependencies — they are not installed inside this package.
+There is a **cross-version test matrix** under `Build/` (see below). Day-to-day PHP tooling still runs **through DDEV from the parent project root** (`/home/oliver/typo3-14`), where `phpstan/phpstan`, `saschaegerer/phpstan-typo3` and `typo3/coding-standards` are shared dev dependencies — they are not installed inside this package.
+
+### The test matrix
+
+`Build/Scripts/runTests.sh` (wrapped by `make test-matrix`) provisions one disposable DDEV lab per TYPO3 major, wires the working tree in as a Composer path repository, and runs unit + functional PHPUnit, PHPStan and php-cs-fixer against each. The matrix is defined in `Build/matrix.json`.
+
+Three of the six labs test a **different git branch** — the extension is maintained as one release line per major (`feature-typo3-9` → 1.x, `feature-typo3-10` → 2.x, `feature-typo3-11` → 3.x, `main` → 4.x for v12–14). Those branches are materialised with `git worktree` under `~/.cache/ok-ex365-labs/worktrees/`; the existing `/home/oliver/typo3-N` installs are never touched.
+
+```bash
+make test-matrix          # all majors, offline layers
+make test-matrix-live     # plus real Graph sends (CLI + frontend via getEnv), browser check, getEnv negative check
+                          # credentials: ~/.config/ok-ex365/test.env (outside the repo)
+make install-hooks        # pushing a tag runs the matrix for its branch and blocks on red
+make test-matrix-status   # lab state
+make test-matrix-clean    # delete labs, DDEV projects and worktrees
+```
+
+Three things about the suite that are easy to get wrong:
+
+- **The test dialect is plain `testFoo()` naming — no attributes, no annotations, no data providers.** This is not style: the v10 lab runs PHP 7.4, where `#[Test]` parses as a `#` comment, so an attribute-based file loads cleanly and contributes **zero** tests. A green run that tested nothing is worse than a red one.
+- **The Graph call has one seam: `createGraphServiceClient()`** (protected). Tests subclass the transport to count or replace client creation; sender resolution lives in `resolveGraphSenderUserId()` and is tested directly. The real Graph SDK call itself only runs in the live checks. On the 1.x/2.x branches the seam is `createHttpClient()` and the whole send path runs against a Guzzle `MockHandler`.
+- **The live fixture is lab-only.** `Build/testing/` (frontend `USER_INT`, CLI sender, root `sys_template` installer, Playwright check) is mounted read-only at `/var/www/matrix` in every lab, so it serves all branches without existing on them. The frontend userFunc needs `#[AsAllowedCallable]` on TYPO3 14.
+- **`:= getEnv()` keeps the previous value when the variable is unset** (TYPO3 9–14). The negative check clears the property first for that reason.
+- **Constructing the transport in a unit test needs `GeneralUtility::addInstance()`** unless a dispatcher is passed. Without one, `__construct()` builds an `EventDispatcherAdapter` via `makeInstance()`, and that adapter has a mandatory argument; without a container `makeInstance()` falls through to `new` and raises an `ArgumentCountError`. `AbstractTransportTestCase::createSubject()` primes the instance stack instead. Private methods are reached by reflection, deliberately, so the production class stays untouched.
 
 ```bash
 # Static analysis — level 8, config at packages/ok_exchange365_mailer/phpstan.neon

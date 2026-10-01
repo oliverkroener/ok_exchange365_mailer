@@ -1,0 +1,99 @@
+{
+    "package": "oliverkroener/ok-exchange365-mailer",
+    "extensionKey": "ok_exchange365_mailer",
+    "labRoot": "~/.cache/ok-ex365-labs",
+    "projectPrefix": "ok-ex365-t3v",
+    "defaultLayers": [
+        "resolve",
+        "install",
+        "canary",
+        "unit",
+        "functional",
+        "phpstan",
+        "cgl"
+    ],
+    "versions": [
+        {
+            "major": "9",
+            "branch": "feature-typo3-9",
+            "distribution": "typo3/cms-base-distribution:^9.5",
+            "php": "7.4",
+            "db": "mariadb:10.4",
+            "installer": "console",
+            "skipLayers": [],
+            "notes": "SwiftMailer transport; Graph called directly with Guzzle; blinding via hook",
+            "phpstanLevel": 4,
+            "testingFramework": "^4.15",
+            "phpunit": "^7.5"
+        },
+        {
+            "major": "10",
+            "branch": "feature-typo3-10",
+            "distribution": "typo3/cms-base-distribution:^10.4",
+            "php": "7.4",
+            "db": "mariadb:10.4",
+            "installer": "console",
+            "skipLayers": [],
+            "notes": "Graph SDK v1; no credential blinding class; TSFE->tmpl TypoScript access",
+            "phpstanLevel": 4,
+            "testingFramework": "^6.16.10",
+            "phpunit": "^9.6"
+        },
+        {
+            "major": "11",
+            "branch": "feature-typo3-11",
+            "distribution": "typo3/cms-base-distribution:^11.5",
+            "php": "8.1",
+            "db": "mariadb:10.4",
+            "installer": "console",
+            "skipLayers": [],
+            "notes": "Credential blinding via hook, not event listener; TSFE->tmpl TypoScript access",
+            "phpstanLevel": 5,
+            "testingFramework": "^7.1",
+            "phpunit": "^9.6"
+        },
+        {
+            "major": "12",
+            "branch": "main",
+            "distribution": "typo3/cms-base-distribution:^12.4",
+            "php": "8.1",
+            "db": "mariadb:10.11",
+            "installer": "setup",
+            "skipLayers": [
+                "cgl"
+            ],
+            "notes": "Static TypoScript template path; site sets not available; CGL runs once per branch, on its newest lab (v14) - older labs resolve an older typo3/coding-standards with conflicting rules",
+            "phpstanLevel": 8,
+            "testingFramework": "^8.3.3 || ^9.1",
+            "phpunit": "^10.5 || ^11.5"
+        },
+        {
+            "major": "13",
+            "branch": "main",
+            "distribution": "typo3/cms-base-distribution:^13.4",
+            "php": "8.2",
+            "db": "mariadb:10.11",
+            "installer": "setup",
+            "skipLayers": [
+                "cgl"
+            ],
+            "notes": "Site set path; CGL runs once per branch, on its newest lab (v14) - older labs resolve an older typo3/coding-standards with conflicting rules",
+            "phpstanLevel": 8,
+            "testingFramework": "^8.3.3 || ^9.1",
+            "phpunit": "^10.5 || ^11.5"
+        },
+        {
+            "major": "14",
+            "branch": "main",
+            "distribution": "typo3/cms-base-distribution:^14.3",
+            "php": "8.2",
+            "db": "mariadb:10.11",
+            "installer": "setup",
+            "skipLayers": [],
+            "notes": "Site set path",
+            "phpstanLevel": 8,
+            "testingFramework": "^9.1",
+            "phpunit": "^10.5 || ^11.5"
+        }
+    ]
+}

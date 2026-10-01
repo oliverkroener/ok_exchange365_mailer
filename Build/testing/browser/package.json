@@ -1,0 +1,9 @@
+{
+    "name": "ok-exchange365-mailer-matrix-browser",
+    "private": true,
+    "description": "Lab-only browser checks for the ok_exchange365_mailer test matrix",
+    "type": "module",
+    "dependencies": {
+        "playwright-core": "1.62.0"
+    }
+}

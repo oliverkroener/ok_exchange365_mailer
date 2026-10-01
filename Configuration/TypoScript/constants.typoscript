@@ -16,7 +16,7 @@ plugin.tx_okexchange365mailer.settings.exchange365.clientSecret =
 # cat=exchange365mailer/cEmail/e0; type=string; label=FromEmail: The Email used to send from Exchange365. Empty falls back to transport_exchange365_fromEmail.
 plugin.tx_okexchange365mailer.settings.exchange365.fromEmail =
 
-# cat=exchange365mailer/cEmail/e1; type=string; label=Graph Sender User ID: Optional Microsoft Graph mailbox/user ID used for the API call (Send As / Send On Behalf scenarios). Defaults to fromEmail when empty.
+# cat=exchange365mailer/cEmail/e1; type=string; label=Graph Sender User ID: Optional Microsoft Graph mailbox/user ID used for the API call (Send As / Send On Behalf scenarios). Empty: the message From address, then fromEmail, then MAIL.defaultMailFromAddress.
 plugin.tx_okexchange365mailer.settings.exchange365.graphSenderUserId =
 
 # cat=exchange365mailer/cEmail/e2; type=select[0,1]; label=Save sent Emails: The Emails are saved to the Sent Folder if enabled

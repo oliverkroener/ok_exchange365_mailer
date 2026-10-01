@@ -125,21 +125,19 @@ key rather than all-or-nothing.
     per-key fallback means the remaining settings (``fromEmail``,
     ``graphSenderUserId``, ``saveToSentItems``) still work from the backend.
 
+    If a site needs credentials of its own, read them from the environment in
+    the site's TypoScript with ``:= getEnv(...)`` — see :ref:`frontend-getenv`.
+
 Setting the transport
 =====================
 
-The site set only supplies the credentials. The transport itself must still be
-activated, preferably via the environment variable described in :ref:`essential`:
+The site set only supplies the credentials. The transport itself is always
+selected in ``$GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport']`` as described in
+:ref:`essential` — there is no TypoScript or site setting for it:
 
 ..  code-block:: bash
 
     TYPO3_CONF_VARS__MAIL__transport="OliverKroener\\OkExchange365\\Mail\\Transport\\Exchange365Transport"
-
-or, for the frontend only, via TypoScript:
-
-..  code-block:: typoscript
-
-    config.mail.transport = OliverKroener\OkExchange365\Mail\Transport\Exchange365Transport
 
 Scope
 =====
@@ -153,6 +151,6 @@ those as well if you send mail outside of frontend requests.
 ..  seealso::
     - :ref:`Essential Configuration <essential>` — environment variables and
       :file:`settings.php`, recommended for production
-    - :ref:`Frontend Configuration <frontend>` — the TypoScript constants, still
-      required on TYPO3 v12
+    - :ref:`Frontend Configuration <frontend>` — the TypoScript parameters and
+      ``:= getEnv(...)``; the only per-site option on TYPO3 v12
     - `Site sets (TYPO3 Explained) <https://docs.typo3.org/permalink/t3coreapi:site-sets>`_

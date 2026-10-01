@@ -1,0 +1,28 @@
+# Lab-only TypoScript for the test matrix, written into the root sys_template.
+#
+# Credentials come ONLY from := getEnv(). During the frontend checks the lab's
+# TYPO3_CONF_VARS carry no Exchange 365 credentials, so a successful send proves
+# the documented getEnv() path works on this TYPO3 version.
+
+plugin.tx_okexchange365mailer.settings.exchange365 {
+    tenantId := getEnv(EXCHANGE365_TENANT_ID)
+    # clientId deliberately comes from frontend.constants.typoscript through the
+    # static template's constant mapping - that proves getEnv() in constants.
+    clientSecret := getEnv(EXCHANGE365_CLIENT_SECRET)
+    fromEmail := getEnv(EXCHANGE365_FROM_EMAIL)
+    graphSenderUserId := getEnv(EXCHANGE365_GRAPH_SENDER_USER_ID)
+    saveToSentItems = 0
+}
+
+# Negative check. getEnv() on a variable that is NOT set keeps the property's
+# previous value (TYPO3 9-14 all behave this way), so it is reset first. The
+# empty value then falls back to TYPO3_CONF_VARS, which carry no credentials
+# during this check - the send must fail cleanly and name the missing field.
+[like(request.getNormalizedParams().getQueryString(), '*ex365mode=missing*')]
+    plugin.tx_okexchange365mailer.settings.exchange365.clientSecret =
+    plugin.tx_okexchange365mailer.settings.exchange365.clientSecret := getEnv(EX365_MATRIX_UNSET_VARIABLE)
+[END]
+
+page = PAGE
+page.10 = USER_INT
+page.10.userFunc = OliverKroener\OkExchange365\TestFixture\FrontendSend->main

@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+#
+# Release gate: a version tag can only be pushed after the test matrix is green
+# for every TYPO3 major that the tagged branch supports.
+#
+# Enable once per clone (shared by all its worktrees):
+#
+#   make install-hooks
+#
+# Branch pushes are never blocked - only tags. Live Microsoft Graph sends are
+# included when the credentials file exists (see Build/testing/.env.test.dist).
+# Skip in an emergency with:  OK_EX365_SKIP_MATRIX=1 git push --tags
+
+set -o errexit -o nounset -o pipefail
+
+[ "${OK_EX365_SKIP_MATRIX:-0}" = "1" ] && { echo "pre-push: matrix skipped (OK_EX365_SKIP_MATRIX=1)"; exit 0; }
+
+# core.hooksPath points at the main checkout's .githooks (see `make install-hooks`),
+# so the repository root is simply the hook's parent directory - also when the
+# push runs from a branch worktree that has no .githooks of its own.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+MATRIX_FILE="$REPO_ROOT/Build/matrix.json"
+RUNNER="$REPO_ROOT/Build/Scripts/runTests.sh"
+LAB_ROOT="$HOME/.cache/ok-ex365-labs"
+ZERO=0000000000000000000000000000000000000000
+
+[ -f "$MATRIX_FILE" ] || { echo "pre-push: $MATRIX_FILE not found - check out main in $REPO_ROOT" >&2; exit 1; }
+
+# The hook reads the tag list from stdin, while the matrix itself must never
+# read stdin - so collect first.
+tags=()
+while read -r local_ref local_sha _remote_ref _remote_sha; do
+    [[ "$local_ref" == refs/tags/* ]] || continue
+    [ "$local_sha" = "$ZERO" ] && continue          # deleting a tag
+    tags+=("${local_ref#refs/tags/} $(git rev-parse "${local_sha}^{commit}")")
+done
+
+[ "${#tags[@]}" -eq 0 ] && exit 0
+
+branches_and_majors() {
+    php -r '
+        $m = json_decode(file_get_contents($argv[1]), true);
+        $byBranch = [];
+        foreach ($m["versions"] as $v) { $byBranch[$v["branch"]][] = $v["major"]; }
+        foreach ($byBranch as $branch => $majors) { echo $branch, " ", implode(",", $majors), "\n"; }
+    ' "$MATRIX_FILE"
+}
+
+live=""
+[ -f "${OK_EX365_TEST_ENV:-$HOME/.config/ok-ex365/test.env}" ] && live="--live"
+
+for entry in "${tags[@]}"; do
+    tag="${entry% *}"; sha="${entry#* }"
+    branch=""; majors=""
+    while read -r candidate candidate_majors; do
+        if git merge-base --is-ancestor "$sha" "refs/heads/$candidate" 2>/dev/null \
+            || git merge-base --is-ancestor "$sha" "refs/remotes/origin/$candidate" 2>/dev/null; then
+            branch="$candidate"; majors="$candidate_majors"; break
+        fi
+    done < <(branches_and_majors)
+
+    if [ -z "$branch" ]; then
+        echo "pre-push: tag $tag is not on any branch listed in Build/matrix.json - refusing." >&2
+        exit 1
+    fi
+
+    # The matrix tests a checkout, so that checkout must BE the tag.
+    if [ "$branch" = "main" ]; then
+        source_dir="$REPO_ROOT"
+    else
+        source_dir="$LAB_ROOT/worktrees/$branch"
+        if [ ! -d "$source_dir" ]; then
+            git -C "$REPO_ROOT" worktree add "$source_dir" "$branch" >/dev/null 2>&1 \
+                || { echo "pre-push: could not create worktree $source_dir" >&2; exit 1; }
+        fi
+    fi
+    if [ "$(git -C "$source_dir" rev-parse HEAD)" != "$sha" ] || [ -n "$(git -C "$source_dir" status --porcelain)" ]; then
+        echo "pre-push: $source_dir must be clean and at $tag ($sha) to test it - refusing." >&2
+        exit 1
+    fi
+
+    echo "pre-push: tag $tag is on $branch - running the matrix for TYPO3 $majors ${live:+(with live sends)}"
+    if ! "$RUNNER" --versions="$majors" --keep-labs $live </dev/null; then
+        echo "pre-push: matrix failed for $tag - push refused. See the report above." >&2
+        exit 1
+    fi
+done

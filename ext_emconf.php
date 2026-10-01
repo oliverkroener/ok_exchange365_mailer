@@ -1,7 +1,7 @@
 <?php
 
 $EM_CONF[$_EXTKEY] = [
-    'title' => 'Exchange 365 Mail Extension for OAuth2',
+    'title' => 'Microsoft Exchange 365 Mailer',
     'description' => 'A TYPO3 extension for sending emails using Exchange 365 and Microsoft Graph API',
     'tags' => 'exchange365, mail, smtp, oauth2, microsoft graph',
     'category' => 'plugin',

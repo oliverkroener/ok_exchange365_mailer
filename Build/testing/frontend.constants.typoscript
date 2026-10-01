@@ -1,0 +1,4 @@
+# Lab-only constants for the test matrix, written into the root sys_template.
+# clientId is ONLY set here, so the frontend send proves := getEnv() works in
+# constants as well as in setup.
+plugin.tx_okexchange365mailer.settings.exchange365.clientId := getEnv(EXCHANGE365_CLIENT_ID)

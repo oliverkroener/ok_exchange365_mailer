@@ -28,11 +28,21 @@ This page covers the complete configuration setup for the Exchange 365 TYPO3 ext
 Configuration Variables
 =======================
 
-The extension requires several configuration variables to be set in TYPO3. These can be configured through environment variables or directly in the TYPO3 configuration.
+The extension reads its settings from ``$GLOBALS['TYPO3_CONF_VARS']['MAIL']``. The
+keys are prefixed with ``transport_exchange365_`` to avoid conflicts with other mail
+transports. These settings are used everywhere — backend, CLI, scheduler and, unless
+TypoScript overrides them, the :ref:`frontend <frontend>`.
 
-The following steps show the configuration with .env variables, but you can also set them in the `LocalConfiguration.php` file or through the TYPO3 Admin Panel if available.
-..  note::
-    The configuration variables are prefixed with `TYPO3_CONF_VARS__MAIL__transport_exchange365_` to avoid conflicts with other mail transports.
+The steps below write them as environment variables named
+``TYPO3_CONF_VARS__MAIL__…``, which keeps every secret out of files that end up in
+version control.
+
+..  important::
+    **TYPO3 does not read** ``TYPO3_CONF_VARS__…`` **variables by itself.** The
+    double-underscore naming is a widespread convention, but the mapping onto
+    ``$GLOBALS['TYPO3_CONF_VARS']`` has to be done by your project — see
+    :ref:`env-mapping`. If your project has no such mapping, use
+    :ref:`config-files-from-env` instead.
 
 ..  rst-class:: bignums-xxl
 
@@ -123,7 +133,8 @@ The following steps show the configuration with .env variables, but you can also
     ..  note::
         - Set to `1` to save emails to Sent Items folder
         - Set to `0` to skip saving emails to Sent Items folder
-        - Default value is `0` (disabled) if not specified
+        - Default when not set: `0` for backend, CLI and scheduler mails. In the
+          frontend, the static template and the site set default to `1`.
 
 ..  _configuration-example:
 
@@ -160,50 +171,73 @@ You can configure these settings using a `.env` file in your TYPO3 root director
 Alternative Configuration Methods
 =================================
 
-In Typo3 config files
-----------------------
+..  _env-mapping:
 
-Alternatively, you can add these settings directly to your TYPO3 configuration files, such as `config/system/settings.php or config/system/additional.php` or `typo3conf/LocalConfiguration.php`.
+Mapping ``TYPO3_CONF_VARS__…`` variables
+----------------------------------------
+
+If your project does not already map ``TYPO3_CONF_VARS__…`` environment variables,
+add this loop. Double underscores become array levels, so
+``TYPO3_CONF_VARS__MAIL__transport_exchange365_clientSecret`` ends up in
+``$GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_clientSecret']``.
+
+..  code-block:: php
+    :caption: config/system/additional.php (TYPO3 v12+) or typo3conf/AdditionalConfiguration.php (TYPO3 v9–v11)
+
+    <?php
+
+    // Variables loaded by a dotenv library live in $_ENV, variables set by the
+    // web server or container in getenv(). Read both.
+    foreach (array_merge(getenv(), $_ENV) as $name => $value) {
+        if (!is_string($name) || !str_starts_with($name, 'TYPO3_CONF_VARS__')) {
+            continue;
+        }
+        $target = &$GLOBALS['TYPO3_CONF_VARS'];
+        foreach (explode('__', substr($name, strlen('TYPO3_CONF_VARS__'))) as $segment) {
+            $target = &$target[$segment];
+        }
+        $target = $value;
+        unset($target);
+    }
+
+On PHP 7.x (TYPO3 v9 and v10 projects), replace ``str_starts_with($name, …)``
+with ``strpos($name, 'TYPO3_CONF_VARS__') === 0``.
+
+..  _config-files-from-env:
+
+In TYPO3 configuration files, reading the environment
+-----------------------------------------------------
+
+Without the mapping, set the values in :file:`config/system/additional.php`
+(TYPO3 v12+) or :file:`typo3conf/AdditionalConfiguration.php` (TYPO3 v9–v11) and
+read the secrets from the environment there. Use your own variable names:
 
 ..  code-block:: php
 
     <?php
-    return [
-        // ...existing configuration...
-        
-        'MAIL' => [
-            'transport' => 'OliverKroener\\OkExchange365\\Mail\\Transport\\Exchange365Transport',
-            'transport_exchange365_tenantId' => 'your-tenant-id-here',
-            'transport_exchange365_clientId' => 'your-client-id-here',
-            'transport_exchange365_clientSecret' => 'your-client-secret-here',
-            'transport_exchange365_fromEmail' => 'service@your-domain.com',
-            // Optional: distinct Graph sender mailbox (Send As / Send On Behalf).
-            // 'transport_exchange365_graphSenderUserId' => 'account1@your-domain.com',
-            'transport_exchange365_saveToSentItems' => 1,
-        ],
-        
-        // ...existing configuration...
-    ];
 
-Or using the $GLOBALS syntax:
+    $env = static fn (string $name): string => (string)(getenv($name) ?: ($_ENV[$name] ?? ''));
 
-..  code-block:: php
-
-    <?php
-    // In typo3conf/LocalConfiguration.php or ext_localconf.php
-    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport'] = 'OliverKroener\\OkExchange365\\Mail\\Transport\\Exchange365Transport';
-    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_tenantId'] = 'your-tenant-id-here';
-    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_clientId'] = 'your-client-id-here';
-    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_clientSecret'] = 'your-client-secret-here';
+    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport'] = \OliverKroener\OkExchange365\Mail\Transport\Exchange365Transport::class;
+    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_tenantId'] = $env('EXCHANGE365_TENANT_ID');
+    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_clientId'] = $env('EXCHANGE365_CLIENT_ID');
+    $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_clientSecret'] = $env('EXCHANGE365_CLIENT_SECRET');
     $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_fromEmail'] = 'service@your-domain.com';
     // Optional: distinct Graph sender mailbox (Send As / Send On Behalf).
     // $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_graphSenderUserId'] = 'account1@your-domain.com';
     $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport_exchange365_saveToSentItems'] = 1;
 
-..  attention::
-    - Replace placeholder values with your actual Azure configuration values
-    - When using PHP syntax, use single backslashes (`\`) in class names instead of double backslashes
-    - Keep the client secret secure and never commit it to version control
+On PHP 7.x, write the arrow function as a regular closure.
+
+..  warning::
+    Do not write the client secret as a literal into :file:`config/system/settings.php`,
+    :file:`LocalConfiguration.php` or :file:`additional.php`. TYPO3 rewrites
+    :file:`settings.php` when settings change in the backend, and all of these
+    files typically end up in version control and backups.
+
+..  note::
+    In the frontend, the same values can also come from TypoScript, where
+    ``:= getEnv(...)`` reads them from the environment. See :ref:`frontend-getenv`.
 
 ..  _testing-the-configuration:
 
@@ -245,12 +279,12 @@ To verify your configuration is correct:
 
 1.  **Check in backend**:
 
-    - Navigate to the TYPO3 Admin Panel
-    - Check the mail configuration under **Settings > Environment > Test Mail Setup**
+    - Open **Admin Tools > Environment > Test Mail Setup** (TYPO3 v14:
+      *System > Environment*)
     - Ensure the transport is set to `Exchange365Transport` and all required fields are filled
 
     ..  figure:: /_Images/image-test-mail-setup.png
-        :alt: TYPO3 Admin Panel showing mail transport configuration
+        :alt: TYPO3 Environment module showing the Test Mail Setup
         :class: with-shadow
         :scale: 100
 
@@ -265,11 +299,14 @@ To verify your configuration is correct:
    
     ..  code-block:: php
    
-        // Test email functionality
+        // Test email functionality (TYPO3 v10+; v14 removed MailMessage::send())
         $mail = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
         $mail->to('test@example.com')
             ->subject('Test Email')
-            ->text('This is a test email from TYPO3.')
-            ->send();
+            ->text('This is a test email from TYPO3.');
+        \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\Mailer::class)->send($mail);
 
-4. **Check logs**: Monitor TYPO3 logs for authentication or sending errors
+4. **Check logs**: Monitor TYPO3 logs for authentication or sending errors.
+   A failed send throws a Symfony ``TransportException`` (a ``RuntimeException``)
+   whose message names the cause, for example
+   ``Exchange 365 configuration missing required field: clientSecret``.

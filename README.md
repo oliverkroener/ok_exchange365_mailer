@@ -30,6 +30,22 @@ A TYPO3 extension for sending emails via Microsoft Exchange 365 using the MS Gra
   - `microsoft/microsoft-graph` ^2
   - `oliverkroener/ok-typo3-helper` ^3
 
+## Compatibility
+
+This extension is maintained as one release line per TYPO3 major. Composer picks the right one
+automatically, but if you pin a version yourself, use this table:
+
+| TYPO3 | Extension | Branch | PHP | Graph SDK | Status |
+|---|---|---|---|---|---|
+| 14.x | 4.3.x | `main` | 8.2 – 8.5 | ^2 | Active |
+| 13.4 LTS | 4.3.x | `main` | 8.2 – 8.5 | ^2 | Active |
+| 12.4 LTS | 4.3.x | `main` | 8.1 – 8.4 | ^2 | Active |
+| 11.5 ELTS | 3.2.x | `feature-typo3-11` | 7.4 – 8.3 | ^2 | Maintenance |
+| 10.4 ELTS | 2.2.x | `feature-typo3-10` | 7.2 – 7.4 | none (Guzzle) | Maintenance |
+| 9.5 | 1.1.x | `feature-typo3-9` | 7.2 – 7.4 | none (Guzzle) | Maintenance |
+
+The TYPO3 9.5 line predates Symfony Mailer and uses SwiftMailer. Every line, 9.5 included, is covered by the test matrix (see [Testing](#testing)).
+
 ## Installation
 
 Install via Composer (recommended):
@@ -79,7 +95,12 @@ Set the mail transport to `Exchange365Transport` and provide your Azure credenti
 | `TYPO3_CONF_VARS__MAIL__transport_exchange365_clientSecret` | Azure Application Secret Value |
 | `TYPO3_CONF_VARS__MAIL__transport_exchange365_fromEmail` | Sender email address (must exist in Exchange 365) |
 | `TYPO3_CONF_VARS__MAIL__transport_exchange365_graphSenderUserId` | *(optional)* Graph mailbox/user ID used for `/users/{id}/sendMail`. When set, this mailbox sends the message; the visible `From` header still comes from the message or `fromEmail`. Use for *Send As* / *Send On Behalf*. |
-| `TYPO3_CONF_VARS__MAIL__transport_exchange365_saveToSentItems` | `1` to save to Sent Items, `0` to skip (default: `0`) |
+| `TYPO3_CONF_VARS__MAIL__transport_exchange365_saveToSentItems` | `1` to save to Sent Items, `0` to skip (default: `0`; the static template and site set default to `1` in the frontend) |
+
+> **TYPO3 does not map `TYPO3_CONF_VARS__…` variables by itself.** Your project needs a
+> small loop in `config/system/additional.php` that copies them into
+> `$GLOBALS['TYPO3_CONF_VARS']`, or set the values there with `getenv()`. Both are shown
+> in [Essential Configuration](Documentation/Configuration/Essential.rst).
 
 **Via the site set (TYPO3 13 / 14, for frontend forms):**
 
@@ -92,21 +113,28 @@ dependencies:
   - oliverkroener/ok-exchange365-mailer
 ```
 
-**Via TypoScript (TYPO3 12, for frontend forms):**
+**Via TypoScript (per-site overrides in the frontend):**
 
-Include the static template *[kroener.DIGITAL] Exchange 365 Mailer*, then:
+Include the static template *[kroener.DIGITAL] Exchange 365 Mailer*, then read the
+credentials from the environment with `getEnv()` — never write the secret into
+TypoScript:
 
 ```typoscript
 plugin.tx_okexchange365mailer.settings.exchange365 {
-    tenantId = your-tenant-id
-    clientId = your-client-id
-    clientSecret = your-client-secret
+    tenantId := getEnv(EXCHANGE365_TENANT_ID)
+    clientId := getEnv(EXCHANGE365_CLIENT_ID)
+    clientSecret := getEnv(EXCHANGE365_CLIENT_SECRET)
     fromEmail = service@your-domain.com
     # Optional: route via a different mailbox using Send As / Send On Behalf
     # graphSenderUserId = service@your-domain.com
     saveToSentItems = 1
 }
 ```
+
+`getEnv()` reads PHP's real process environment (`getenv()`), not `$_ENV`: set the
+variables where the web server starts PHP. A variable that is not set leaves the
+previous value in place, and the result is cached until the next cache flush. Details:
+[Frontend Configuration](Documentation/Configuration/Frontend.rst#frontend-getenv).
 
 The environment variables are the baseline for every context (frontend, backend, CLI,
 scheduler). In the frontend, non-empty site-set or TypoScript values override them **per
@@ -136,6 +164,15 @@ message, which is the standard single-mailbox setup.
 ### Sender Display Name
 
 The Graph API uses the **Display name** configured on the mailbox in Exchange Online. TYPO3's `defaultMailFromName` has no effect. Configure the display name in the Microsoft 365 Admin Center or Exchange Admin Center.
+
+## Testing
+
+`make test-matrix` provisions one throwaway DDEV installation per supported TYPO3
+version — **9.5 to 14.3, each against its own branch** — and runs unit, functional,
+PHPStan and coding-standard checks in each. `make test-matrix-live` additionally sends
+real mail through Microsoft Graph from the CLI and from the frontend (credentials only
+via `:= getEnv()`), and checks in a headless browser that the secret is masked in the
+backend. See [Testing](Documentation/Development/Testing.rst).
 
 ## Architecture
 

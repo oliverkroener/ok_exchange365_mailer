@@ -4,12 +4,21 @@ declare(strict_types=1);
 
 namespace OliverKroener\OkExchange365\Mail\Transport;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\RequestOptions;
+use Microsoft\Graph\Core\Authentication\GraphPhpLeagueAccessTokenProvider;
+use Microsoft\Graph\Core\Authentication\GraphPhpLeagueAuthenticationProvider;
+use Microsoft\Graph\Core\GraphClientFactory;
+use Microsoft\Graph\Core\NationalCloud;
 use Microsoft\Graph\Generated\Users\Item\SendMail\SendMailPostRequestBody;
+use Microsoft\Graph\GraphRequestAdapter;
 use Microsoft\Graph\GraphServiceClient;
 use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
+use Microsoft\Kiota\Authentication\Oauth\ProviderFactory;
 use OliverKroener\Helpers\MSGraphApi\MSGraphMailApiService;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Mailer\Exception\TransportException;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use TYPO3\CMS\Core\Adapter\EventDispatcherAdapter;
@@ -25,6 +34,15 @@ class Exchange365Transport extends AbstractTransport
     private LoggerInterface $logger;
 
     /**
+     * Graph client reused for every message this transport sends with the same
+     * credentials. The client keeps its OAuth token in memory, so a request that
+     * sends several mails (a form, a scheduler run) authenticates only once.
+     * The Graph SDK's own middleware already retries 429/503/504 with Retry-After.
+     */
+    private ?GraphServiceClient $graphServiceClient = null;
+    private string $graphServiceClientKey = '';
+
+    /**
      * Constructor for Exchange365Transport
      *
      * @param array<string, mixed> $mailSettings Mail configuration settings
@@ -33,9 +51,7 @@ class Exchange365Transport extends AbstractTransport
      */
     public function __construct(array $mailSettings, ?EventDispatcherInterface $dispatcher = null, ?LoggerInterface $logger = null)
     {
-        $eventDispatcherAdapter = GeneralUtility::makeInstance(EventDispatcherAdapter::class);
-
-        parent::__construct($dispatcher ?? $eventDispatcherAdapter);
+        parent::__construct($dispatcher ?? GeneralUtility::makeInstance(EventDispatcherAdapter::class));
 
         // Initialize the logger using TYPO3's logging system
         $this->logger = $logger ?? GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
@@ -46,7 +62,7 @@ class Exchange365Transport extends AbstractTransport
      * Sends the email using Microsoft Graph API.
      *
      * @param SentMessage $message The email message to be sent.
-     * @throws \RuntimeException If sending fails.
+     * @throws TransportException If sending fails.
      */
     protected function doSend(SentMessage $message): void
     {
@@ -59,34 +75,12 @@ class Exchange365Transport extends AbstractTransport
             // Validate required configuration
             $this->validateConfiguration($conf);
 
-            // Setup authentication context
-            $tokenRequestContext = new ClientCredentialContext(
-                (string)$conf['tenantId'],
-                (string)$conf['clientId'],
-                (string)$conf['clientSecret']
-            );
-
-            $graphServiceClient = new GraphServiceClient($tokenRequestContext);
+            $graphServiceClient = $this->getGraphServiceClient($conf);
 
             // Convert to Microsoft Graph message format
             $graphMessage = MSGraphMailApiService::convertToGraphMessage($message);
 
-            // Resolve the Microsoft Graph sender mailbox/user ID for the
-            // /users/{id}/sendMail endpoint. This is intentionally separate
-            // from the message From address so Send As / Send On Behalf
-            // scenarios can target a different mailbox than the visible sender.
-            // Empty strings from getMailSettingsConfiguration() must be
-            // treated as "unset", so use !empty() instead of a bare ?? chain.
-            $graphSenderUserId = (string)(!empty($conf['graphSenderUserId'])
-                ? $conf['graphSenderUserId']
-                : ($graphMessage['from']
-                    ?? (!empty($conf['fromEmail']) ? $conf['fromEmail'] : null)
-                    ?? $GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromAddress']
-                    ?? ''));
-
-            if (empty($graphSenderUserId)) {
-                throw new \RuntimeException('No Microsoft Graph sender user ID could be resolved. Configure graphSenderUserId, fromEmail, or TYPO3 MAIL.defaultMailFromAddress.');
-            }
+            $graphSenderUserId = $this->resolveGraphSenderUserId($conf, $graphMessage['from'] ?? null);
 
             // Prepare request body
             $requestBody = new SendMailPostRequestBody();
@@ -98,11 +92,96 @@ class Exchange365Transport extends AbstractTransport
             $graphServiceClient->users()->byUserId($graphSenderUserId)->sendMail()->post($requestBody)->wait();
 
             $this->logger->debug('Mail sent successfully with ' . self::class . ' via Graph sender ' . $graphSenderUserId);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $errorMessage = 'Sending mail' . ($graphSenderUserId ? " via Graph sender {$graphSenderUserId}" : '') . ' failed: ' . $e->getMessage();
-            $this->logger->alert($errorMessage, ['exception' => $e]);
-            throw new \RuntimeException('Sending mail with Exchange365 mailer failed. Please check credentials setup. Error: ' . $e->getMessage(), 0, $e);
+            $this->logger->error($errorMessage, ['exception' => $e]);
+            // TransportException extends \RuntimeException, so existing catch blocks keep working.
+            throw new TransportException('Sending mail with Exchange365 mailer failed. Please check credentials setup. Error: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    /**
+     * Resolve the Microsoft Graph sender mailbox/user ID for the
+     * /users/{id}/sendMail endpoint.
+     *
+     * This is intentionally separate from the message From address so Send As /
+     * Send On Behalf scenarios can target a different mailbox than the visible
+     * sender. Order: graphSenderUserId, the message From header, fromEmail,
+     * MAIL.defaultMailFromAddress. Empty strings count as "unset" at every step.
+     *
+     * @param array<string, mixed> $conf
+     * @throws \RuntimeException when nothing is configured
+     */
+    private function resolveGraphSenderUserId(array $conf, mixed $messageFrom): string
+    {
+        $candidates = [
+            $conf['graphSenderUserId'] ?? '',
+            $messageFrom,
+            $conf['fromEmail'] ?? '',
+            $GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromAddress'] ?? '',
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_scalar($candidate) && (string)$candidate !== '') {
+                return (string)$candidate;
+            }
+        }
+
+        throw new \RuntimeException('No Microsoft Graph sender user ID could be resolved. Configure graphSenderUserId, fromEmail, or TYPO3 MAIL.defaultMailFromAddress.');
+    }
+
+    /**
+     * Return the Graph client for these credentials, creating it only when the
+     * credentials differ from the ones the cached client was built with.
+     *
+     * @param array<string, mixed> $conf
+     */
+    private function getGraphServiceClient(array $conf): GraphServiceClient
+    {
+        $key = hash('sha256', implode("\0", [(string)$conf['tenantId'], (string)$conf['clientId'], (string)$conf['clientSecret']]));
+
+        if ($this->graphServiceClient === null || $this->graphServiceClientKey !== $key) {
+            $this->graphServiceClient = $this->createGraphServiceClient($conf);
+            $this->graphServiceClientKey = $key;
+        }
+
+        return $this->graphServiceClient;
+    }
+
+    /**
+     * Build a Graph client. Protected so tests can substitute the network layer.
+     *
+     * Same construction as the SDK's default, but with tighter timeouts: the SDK
+     * waits up to 100 s for a response, which would hold a frontend request (a
+     * form submit) for that long when a connection stalls. A stalled sendMail is
+     * deliberately NOT retried - Graph may already have accepted the message.
+     * Throttling (429) and 503/504 are still retried by the SDK's middleware.
+     *
+     * @param array<string, mixed> $conf
+     */
+    protected function createGraphServiceClient(array $conf): GraphServiceClient
+    {
+        $tokenRequestContext = new ClientCredentialContext(
+            (string)$conf['tenantId'],
+            (string)$conf['clientId'],
+            (string)$conf['clientSecret']
+        );
+        $timeouts = [
+            RequestOptions::CONNECT_TIMEOUT => 10,
+            RequestOptions::TIMEOUT => 30,
+        ];
+        // The OAuth library builds its own HTTP client WITHOUT any timeout, so a
+        // stalled token request would block a CLI or scheduler run forever.
+        $oauthProvider = ProviderFactory::create($tokenRequestContext, ['httpClient' => new Client($timeouts)]);
+        $requestAdapter = new GraphRequestAdapter(
+            GraphPhpLeagueAuthenticationProvider::createWithAccessTokenProvider(
+                new GraphPhpLeagueAccessTokenProvider($tokenRequestContext, [], NationalCloud::GLOBAL, null, $oauthProvider)
+            ),
+            GraphClientFactory::createWithConfig($timeouts)
+        );
+        $requestAdapter->setBaseUrl(NationalCloud::GLOBAL . '/v1.0');
+
+        return new GraphServiceClient($tokenRequestContext, [], NationalCloud::GLOBAL, $requestAdapter);
     }
 
     /**
