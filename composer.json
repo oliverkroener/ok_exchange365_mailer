@@ -11,14 +11,27 @@
         }
     ],
     "require": {
+        "php": ">=7.2",
         "typo3/cms-core": "^9.5",
         "oliverkroener/ok-typo3-helper": "^1",
-        "microsoft/microsoft-graph": "^1"
+        "guzzlehttp/guzzle": "^6.3 || ^7.0"
     },
     "autoload": {
         "psr-4": {
             "OliverKroener\\OkExchange365\\": "Classes/"
         }
+    },
+    "require-dev": {
+        "typo3/testing-framework": "^4.15",
+        "phpunit/phpunit": "^7.5"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "OliverKroener\\OkExchange365\\Tests\\": "Tests/"
+        }
+    },
+    "scripts": {
+        "test:unit": "phpunit -c Build/phpunit/UnitTests.xml"
     },
     "extra": {
         "typo3/cms": {

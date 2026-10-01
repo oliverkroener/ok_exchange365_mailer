@@ -1,1 +1,6 @@
 Documentation-GENERATED-temp
+
+# Cross-version test matrix
+/Build/reports/
+.phpunit.result.cache
+/vendor/
