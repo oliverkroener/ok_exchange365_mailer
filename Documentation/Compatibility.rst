@@ -29,19 +29,19 @@ Support matrix
         -   Status
 
     *   -   14.x
-        -   4.3.x
+        -   4.4.x
         -   ``main``
         -   8.2 – 8.5
         -   ^2
         -   Active
     *   -   13.4 LTS
-        -   4.3.x
+        -   4.4.x
         -   ``main``
         -   8.2 – 8.5
         -   ^2
         -   Active
     *   -   12.4 LTS
-        -   4.3.x
+        -   4.4.x
         -   ``main``
         -   8.1 – 8.4
         -   ^2
@@ -80,7 +80,7 @@ Composer resolves the correct line on its own. Pin explicitly only when you need
 ..  code-block:: bash
 
     # TYPO3 12, 13 or 14
-    composer require oliverkroener/ok-exchange365-mailer:^4.3
+    composer require oliverkroener/ok-exchange365-mailer:^4.4
 
     # TYPO3 11
     composer require oliverkroener/ok-exchange365-mailer:^3.2

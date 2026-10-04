@@ -5,7 +5,7 @@
 [![TYPO3 14](https://img.shields.io/badge/TYPO3-14-orange?logo=typo3)](https://get.typo3.org/version/14)
 [![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2%2B-blue)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
-[![Version](https://img.shields.io/badge/version-4.3.0-green)](https://github.com/oliverkroener/ok_exchange365_mailer)
+[![Version](https://img.shields.io/badge/version-4.4.0-green)](https://github.com/oliverkroener/ok_exchange365_mailer)
 
 A TYPO3 extension for sending emails via Microsoft Exchange 365 using the MS Graph API instead of SMTP. Uses OAuth 2.0 client credentials flow for secure, token-based authentication.
 
@@ -37,9 +37,9 @@ automatically, but if you pin a version yourself, use this table:
 
 | TYPO3 | Extension | Branch | PHP | Graph SDK | Status |
 |---|---|---|---|---|---|
-| 14.x | 4.3.x | `main` | 8.2 – 8.5 | ^2 | Active |
-| 13.4 LTS | 4.3.x | `main` | 8.2 – 8.5 | ^2 | Active |
-| 12.4 LTS | 4.3.x | `main` | 8.1 – 8.4 | ^2 | Active |
+| 14.x | 4.4.x | `main` | 8.2 – 8.5 | ^2 | Active |
+| 13.4 LTS | 4.4.x | `main` | 8.2 – 8.5 | ^2 | Active |
+| 12.4 LTS | 4.4.x | `main` | 8.1 – 8.4 | ^2 | Active |
 | 11.5 ELTS | 3.2.x | `feature-typo3-11` | 7.4 – 8.3 | ^2 | Maintenance |
 | 10.4 ELTS | 2.2.x | `feature-typo3-10` | 7.2 – 7.4 | none (Guzzle) | Maintenance |
 | 9.5 | 1.1.x | `feature-typo3-9` | 7.2 – 7.4 | none (Guzzle) | Maintenance |
