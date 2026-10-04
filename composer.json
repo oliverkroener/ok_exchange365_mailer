@@ -3,6 +3,19 @@
     "description": "A TYPO3 extension for sending emails using Exchange 365 and Microsoft Graph API",
     "type": "typo3-cms-extension",
     "license": "GPL-2.0-or-later",
+    "homepage": "https://www.oliver-kroener.de",
+    "keywords": [
+        "typo3",
+        "typo3-extension",
+        "email",
+        "mailer",
+        "exchange-365",
+        "microsoft-graph",
+        "oauth2",
+        "office-365",
+        "smtp-replacement",
+        "swiftmailer"
+    ],
     "version": "1.1.0",
     "authors": [
         {

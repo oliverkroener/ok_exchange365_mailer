@@ -1,51 +1,85 @@
-# Exchange365 Mailer extension
+# Exchange 365 Mailer (ok_exchange365_mailer)
 
-Extension for Typo3 to enable mails with Exchange 365 without enabling SMTP.
+[![TYPO3 9](https://img.shields.io/badge/TYPO3-9-orange?logo=typo3)](https://get.typo3.org/version/9)
+[![PHP 7.2+](https://img.shields.io/badge/PHP-7.2%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
+[![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2%2B-blue)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
+[![Version](https://img.shields.io/badge/version-1.1.0-green)](https://github.com/oliverkroener/ok_exchange365_mailer)
 
-## **Enabling Microsoft Exchange 365 Mail Integration for TYPO3 Without SMTP**
+A TYPO3 mail transport that sends emails through **Microsoft Exchange 365 / Microsoft 365** using the **Microsoft Graph API** with **OAuth 2.0** — no SMTP required.
 
-### **Seamless Email Integration Using Microsoft Graph API**
+## Features
 
-Integrating Microsoft Exchange 365 mail services with TYPO3, a widely used content management system, can present challenges, particularly for those looking to avoid the traditional SMTP protocol. A specialized TYPO3 extension now offers a solution by enabling seamless email integration with Exchange 365 without the need for SMTP. This extension utilizes the Microsoft Graph API to send emails directly, providing a secure and efficient method for organizations that prefer not to use SMTP and wish to leverage the modern API-driven capabilities of Microsoft 365.
-
-### **Enhanced Security Through OAuth 2.0 and API-Based Communication**
-
-At the core of this extension's functionality is the use of OAuth 2.0 authentication in conjunction with the Microsoft Graph API to send emails. This method, recommended by Microsoft, provides a secure token-based approach, eliminating the need to store SMTP credentials within the TYPO3 environment. By using Microsoft Graph API to send emails, the extension ensures that communication with Exchange 365 servers is conducted securely and in compliance with data protection standards. This approach is especially beneficial in sectors like healthcare, finance, and government, where data security and regulatory compliance are crucial.
-
-### **Improved Performance by Bypassing SMTP Overheads**
-
-By sending emails via the Microsoft Graph API instead of relying on SMTP, this extension helps improve overall performance and reduces latency in email communication. The API-based approach allows for direct communication with Exchange 365 servers, bypassing the traditional SMTP handshaking and authentication processes, which can often lead to delays. This results in faster email delivery and a more responsive TYPO3 environment, which is particularly advantageous for websites or organizations with high volumes of email traffic.
-
-### **Cost-Effective, Scalable, and Future-Proof Solution**
-
-This TYPO3 extension offers a cost-effective and scalable solution for businesses by utilizing the Microsoft Graph API to handle email sending. It removes the need for SMTP server setup and maintenance, reducing infrastructure costs. Additionally, the extension's reliance on Microsoft Graph API makes it inherently scalable, capable of handling significant email traffic without requiring additional resources. This future-proof approach aligns with Microsoft's push towards API-driven services, ensuring that businesses can leverage the latest technologies and remain adaptable to future changes in the Microsoft ecosystem.
+- **SMTP-free email delivery** — mails are posted to the Microsoft Graph `/users/{id}/sendMail` endpoint instead of SMTP.
+- **OAuth 2.0 (client credentials)** — app-only access token from the Microsoft identity platform v2.0 endpoint; no mailbox password is stored in TYPO3. The token is cached per credential set, so a request that sends several mails authenticates only once.
+- **SwiftMailer transport** — implements `Swift_Transport`; existing `MailMessage` code keeps working unchanged.
+- **Direct HTTPS calls with Guzzle** — no Microsoft Graph SDK. 10 s connect timeout, 30 s total timeout.
+- **One careful retry** — a request is repeated once on HTTP 429/503/504 (honouring `Retry-After`) and when no connection could be made, but not after a connection stalled, so a mail is not delivered twice.
+- **Every context** — the `TYPO3_CONF_VARS` settings apply to backend, frontend, CLI and scheduler. Frontend TypoScript overlays them per setting; empty values fall back.
+- **Send As / Send On Behalf** — an optional `graphSenderUserId` targets a different Graph mailbox than the visible `From` address.
+- **Save to Sent Items** — `saveToSentItems` controls whether Graph keeps a copy in the sender mailbox.
+- **Credential masking** — tenant ID, client ID and client secret from `TYPO3_CONF_VARS` are masked in *System > Configuration* (lowlevel module hook).
+- **Clear errors** — a failed send is logged and thrown as a `RuntimeException` that names the cause.
 
 ## Requirements
 
-- TYPO3 **9.5 LTS** (this is the 1.x line), PHP 7.2 – 7.4
-- A Microsoft Entra ID app registration with the `Mail.Send` application permission and admin consent
+| Component | Supported |
+| --- | --- |
+| TYPO3 | 9.5 LTS (this is the 1.x line) |
+| PHP | 7.2 – 7.4 |
+| Composer packages | `oliverkroener/ok-typo3-helper` `^1`, `guzzlehttp/guzzle` `^6.3 \|\| ^7.0` |
+| Microsoft 365 | A Microsoft Entra ID app registration with the `Mail.Send` application permission and admin consent |
 
-## Configure TYPO3
+## Installation
+
+Install via Composer:
+
+```bash
+composer require oliverkroener/ok-exchange365-mailer:^1.1
+```
+
+Then activate the extension:
+
+```bash
+vendor/bin/typo3 extension:activate ok_exchange365_mailer
+```
+
+Before sending mail, register an application in Microsoft Entra ID and grant it the `Mail.Send` application permission. See [Documentation/Azure/Index.rst](Documentation/Azure/Index.rst).
+
+## Configuration
 
 The transport is selected **only** in `$GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport']`
-— there is no TypoScript option for it. The settings below are used in every context
-(frontend, backend, CLI, scheduler).
+— there is no TypoScript option for it. The settings below live in
+`$GLOBALS['TYPO3_CONF_VARS']['MAIL']` and are used in every context (frontend, backend,
+CLI, scheduler).
 
-| Variable | Description |
-|----------|-------------|
-| `TYPO3_CONF_VARS__MAIL__transport` | `OliverKroener\OkExchange365\Mail\Transport\Exchange365Transport` |
-| `TYPO3_CONF_VARS__MAIL__transport_exchange365_tenantId` | Microsoft Entra ID Tenant ID |
-| `TYPO3_CONF_VARS__MAIL__transport_exchange365_clientId` | Azure Application (Client) ID |
-| `TYPO3_CONF_VARS__MAIL__transport_exchange365_clientSecret` | Azure Application Secret Value |
-| `TYPO3_CONF_VARS__MAIL__transport_exchange365_fromEmail` | Sender email address (must exist in Exchange 365) |
-| `TYPO3_CONF_VARS__MAIL__transport_exchange365_graphSenderUserId` | *(optional)* Graph mailbox used for `/users/{id}/sendMail` (*Send As* / *Send On Behalf*). Falls back to the message `From`, then `fromEmail`, then `MAIL.defaultMailFromAddress` |
-| `TYPO3_CONF_VARS__MAIL__transport_exchange365_saveToSentItems` | `1` to save to Sent Items, `0` to skip (default: `0`; the static template defaults to `1` in the frontend) |
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
+| `transport` | string | — | Set to `OliverKroener\OkExchange365\Mail\Transport\Exchange365Transport` |
+| `transport_exchange365_tenantId` | string | — | Microsoft Entra ID Tenant ID |
+| `transport_exchange365_clientId` | string | — | Azure Application (Client) ID |
+| `transport_exchange365_clientSecret` | string | — | Azure Application Secret Value |
+| `transport_exchange365_fromEmail` | string | `MAIL.defaultMailFromAddress` | Sender email address (must exist in Exchange 365) |
+| `transport_exchange365_graphSenderUserId` | string | — | *(optional)* Graph mailbox used for `/users/{id}/sendMail` (*Send As* / *Send On Behalf*). Falls back to the message `From`, then `fromEmail`, then `MAIL.defaultMailFromAddress` |
+| `transport_exchange365_saveToSentItems` | bool | `0` | `1` to save to Sent Items, `0` to skip (the static template defaults to `1` in the frontend) |
+
+Example using environment variables (`TYPO3_CONF_VARS__MAIL__<setting>`):
+
+```bash
+TYPO3_CONF_VARS__MAIL__transport=OliverKroener\\OkExchange365\\Mail\\Transport\\Exchange365Transport
+TYPO3_CONF_VARS__MAIL__transport_exchange365_tenantId='your-tenant-id'
+TYPO3_CONF_VARS__MAIL__transport_exchange365_clientId='your-client-id'
+TYPO3_CONF_VARS__MAIL__transport_exchange365_clientSecret='your-client-secret'
+TYPO3_CONF_VARS__MAIL__transport_exchange365_fromEmail='service@your-domain.com'
+# Optional: Send As / Send On Behalf
+#TYPO3_CONF_VARS__MAIL__transport_exchange365_graphSenderUserId='shared-mailbox@your-domain.com'
+TYPO3_CONF_VARS__MAIL__transport_exchange365_saveToSentItems=1
+```
 
 > **TYPO3 does not map `TYPO3_CONF_VARS__…` variables by itself.** Your project needs a
 > small loop in `public/typo3conf/AdditionalConfiguration.php` that copies them into
 > `$GLOBALS['TYPO3_CONF_VARS']`, or set the values there with `getenv()`. Both are shown
-> in [the documentation](Documentation/Index.rst). Never write the client secret as a
-> literal into `LocalConfiguration.php` or `AdditionalConfiguration.php`.
+> in [the documentation](Documentation/Configuration/Index.rst). Never write the client
+> secret as a literal into `LocalConfiguration.php` or `AdditionalConfiguration.php`.
 
 A failed send throws a `RuntimeException`, e.g.
 `… Error: Exchange 365 configuration missing required field: clientSecret`. Test the
@@ -78,7 +112,7 @@ loaded only into `$_ENV` (symfony/dotenv, helhum/dotenv-connector default) are i
 so set them where the web server starts PHP or use `putenv()`. A variable that is not set
 leaves the previous value in place, and the result is cached until the next cache flush.
 TypoScript is not sent to the browser, but it is readable in the backend and part of every
-database dump.
+database dump. Details: [Frontend Configuration](Documentation/Configuration/Frontend.rst).
 
 ## Testing
 
@@ -87,3 +121,73 @@ This branch is covered by the cross-version test matrix on the extension's main 
 functional, PHPStan and coding-standard checks, sends real mail through Microsoft Graph
 from the CLI and from the frontend (credentials only via `:= getEnv()`), and checks in a
 headless browser that the credentials are masked in the backend.
+
+The unit tests of this branch run with `composer test:unit`.
+
+## Architecture
+
+Request flow for one mail:
+
+```
+TYPO3 MailMessage (SwiftMailer)
+  → Exchange365Transport::send()
+      → configuration: TYPO3_CONF_VARS['MAIL'] baseline + non-empty frontend TypoScript
+      → POST https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token   (cached per credential set)
+      → POST https://graph.microsoft.com/v1.0/users/{sender}/sendMail
+```
+
+| Component | File | Role |
+| --- | --- | --- |
+| Mail transport | `Classes/Mail/Transport/Exchange365Transport.php` | `Swift_Transport` implementation; obtains the OAuth token and posts the message to the Graph `sendMail` endpoint with Guzzle. Selected via `MAIL.transport`; handles timeouts, the single retry and the sender resolution |
+| Credential masking | `Classes/Hook/BlindedConfigurationOptionsHook.php`, registered in `ext_localconf.php` | Masks tenant ID, client ID and client secret from `TYPO3_CONF_VARS` in *System > Configuration* (lowlevel `ConfigurationController` hook) |
+| TypoScript settings | `Configuration/TypoScript/` | Constants (Constant Editor category `exchange365mailer`) mapped to `plugin.tx_okexchange365mailer.settings.exchange365` |
+| Static template | `Configuration/TCA/Overrides/sys_template.php` | Registers the static template *[kroener.DIGITAL] Exchange 365 Mailer* |
+| Message conversion | `oliverkroener/ok-typo3-helper` (`MSGraphMailApiService`) | Converts the SwiftMailer message into the Graph message format |
+
+```
+ok_exchange365_mailer/
+├── Build/                      PHPUnit, PHPStan and php-cs-fixer configuration
+├── Classes/
+│   ├── Hook/BlindedConfigurationOptionsHook.php
+│   └── Mail/Transport/Exchange365Transport.php
+├── Configuration/
+│   ├── Services.yaml
+│   ├── TCA/Overrides/sys_template.php
+│   └── TypoScript/{constants,setup}.typoscript
+├── Documentation/
+├── Resources/Public/Icons/Extension.svg
+├── Tests/{Functional,Unit}/
+├── composer.json
+├── ext_emconf.php
+└── ext_localconf.php
+```
+
+## Documentation
+
+Full documentation lives in the `Documentation/` directory:
+
+- `Documentation/Introduction/Index.rst` — features, how it works, requirements
+- `Documentation/Installation/Index.rst` — installation
+- `Documentation/Azure/Index.rst` — Microsoft Entra ID app registration
+- `Documentation/Configuration/Index.rst` — settings and environment variables
+- `Documentation/Configuration/Frontend.rst` — optional frontend (TypoScript) overrides
+- `Documentation/Faq/Index.rst` — FAQ and troubleshooting
+
+Render it locally with `make docs`.
+
+## License
+
+This extension is licensed under the [GPL-2.0-or-later](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html).
+
+## Author — Oliver Kroener
+
+### Automated. Scaled. Done.
+
+Web3 · Cloud · Automation
+
+Technology is only valuable when it solves a real problem. For over 30 years I've been translating between business and tech — so your investment in digitalisation doesn't stall at proof-of-concept but delivers measurable results.
+
+- Website: [oliver-kroener.de](https://www.oliver-kroener.de)
+- Web3: [web3.oliver-kroener.de](https://web3.oliver-kroener.de/)
+- Email: [ok@oliver-kroener.de](mailto:ok@oliver-kroener.de)
+- Web3 Email: [oliverkroener@ethermail.io](mailto:oliverkroener@ethermail.io)

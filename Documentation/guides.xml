@@ -1,0 +1,23 @@
+<!-- See  https://docs.typo3.org/permalink/h2document:guides-xml for documentation on this file-->
+<guides xmlns="https://www.phpdoc.org/guides" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://www.phpdoc.org/guides ../vendor/phpdocumentor/guides-cli/resources/schema/guides.xsd"
+        links-are-relative="true"
+        default-code-language="php"
+        input-format="rst"
+>
+    <extension class="\T3Docs\Typo3DocsTheme\DependencyInjection\Typo3DocsThemeExtension"
+               project-home="https://extensions.typo3.org/extension/ok_exchange365_mailer"
+               project-contact="https://github.com/oliverkroener/ok_exchange365_mailer/discussions"
+               project-repository="https://github.com/oliverkroener/ok_exchange365_mailer"
+               project-issues="https://github.com/oliverkroener/ok_exchange365_mailer/issues"
+               project-discussions="https://github.com/oliverkroener/ok_exchange365_mailer/discussions"
+               edit-on-github-branch="feature-typo3-9"
+               edit-on-github="oliverkroener/ok_exchange365_mailer"
+               typo3-core-preferred="9.5"
+               interlink-shortcode="oliverkroener/ok-exchange365-mailer"
+    />
+    <project title="Microsoft Exchange 365 Mailer"
+             version="1.1"
+             release="1.1.0"
+             copyright="since 2024 by Oliver Kroener &amp; Contributors"/>
+</guides>
