@@ -16,7 +16,10 @@ A TYPO3 extension for sending emails via Microsoft Exchange 365 using the MS Gra
 - Supports backend (environment variables / TYPO3 settings) and frontend configuration, the latter via a TYPO3 13/14 **site set** or the classic TypoScript static template
 - Compatible with Powermail, TYPO3 Form Framework, and other form extensions
 - Optional saving of sent emails to the sender's "Sent Items" folder
-- Automatic credential blinding in TYPO3's configuration module
+- Automatic credential blinding in TYPO3's configuration module, for `TYPO3_CONF_VARS` and site settings
+- Credentials can be read from the environment in TypoScript with `:= getEnv(...)` — no secrets in templates
+- One OAuth token per request, short timeouts (10 s connect / 30 s total) and no duplicate sends on a stalled connection
+- Tested on every supported TYPO3 version with real Microsoft Graph sends (see [Testing](#testing))
 - Works with shared mailboxes and Application Access Policies
 - **Send As / Send On Behalf** — optional `graphSenderUserId` decouples the
   Graph mailbox used for `/users/{id}/sendMail` from the visible `From`

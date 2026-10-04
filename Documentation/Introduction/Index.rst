@@ -23,12 +23,21 @@ Features
 
 -  Send emails through Microsoft Graph API — no SMTP required
 -  OAuth 2.0 client credentials flow for server-to-server authentication
--  Supports both backend (environment variables / TYPO3 settings) and
-   frontend (TypoScript) configuration
+-  Supports backend (environment variables / TYPO3 settings) and frontend
+   configuration, the latter via a TYPO3 13/14 :ref:`site set <sitesets>` or
+   the classic TypoScript static template
+-  Credentials can be read from the environment in TypoScript with
+   ``:= getEnv(...)`` — see :ref:`frontend-getenv`
 -  Compatible with Powermail, TYPO3 Form Framework, and other form
    extensions
 -  Optional saving of sent emails to the sender's "Sent Items" folder
--  Automatic credential blinding in TYPO3's configuration module
+-  Automatic credential blinding in TYPO3's configuration module, for
+   ``TYPO3_CONF_VARS`` and site settings
+-  One OAuth token per request, short timeouts (10 s connect / 30 s total)
+   and no duplicate sends on a stalled connection — see
+   :ref:`architecture-graph-client`
+-  Tested on every supported TYPO3 version with real Microsoft Graph sends —
+   see :ref:`testing`
 -  Works with shared mailboxes and Application Access Policies
 -  **Send As / Send On Behalf** via the optional ``graphSenderUserId``
    setting — decouples the Graph mailbox used for the API call from the
@@ -43,5 +52,5 @@ Requirements
 -  **Dependencies**:
 
    -  ``microsoft/microsoft-graph`` ^2 — Microsoft Graph SDK
-   -  ``oliverkroener/ok-typo3-helper`` — provides ``MSGraphMailApiService``
+   -  ``oliverkroener/ok-typo3-helper`` ^3 — provides ``MSGraphMailApiService``
       for message conversion
