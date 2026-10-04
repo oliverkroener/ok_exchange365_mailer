@@ -18,6 +18,9 @@ This extension registers a custom Symfony Mailer transport that delivers mail vi
 - **Send As / Send On Behalf** — an optional `graphSenderUserId` targets a different Graph mailbox than the visible `From` address.
 - **Save to Sent Items** — optionally store sent messages in the sender mailbox's "Sent Items" folder.
 - **Credential blinding** — client ID, tenant ID and client secret from `TYPO3_CONF_VARS` are masked in *System > Configuration* (lowlevel module hook).
+- **Secrets from the environment** — credentials can be read in TypoScript with `:= getEnv(...)`, so no secret has to be written into a template.
+- **Robust delivery** — one Graph client and OAuth token per request, 10 s connect / 30 s total timeouts (including the token request), throttling retried by the SDK, and no retry after a stalled connection, so a mail is never sent twice.
+- **Tested in a real TYPO3 11.5** — unit and functional tests plus live Microsoft Graph sends, see [Testing](#testing).
 
 ## Requirements
 

@@ -1,3 +1,5 @@
+..  include:: /Includes.rst.txt
+
 :navigation-title: 
     Exchange 365 Mailer
     
@@ -34,22 +36,17 @@ Microsoft Exchange 365 Mailer
     :keywords: TYPO3, Exchange 365, Microsoft Graph API, OAuth 2.0, email integration
 
 ..  toctree::
-    :glob:
     :titlesonly:
     :hidden:
     :maxdepth: 2
 
-    */Index
     Installation
     Azure
     Configuration/Index
     Faq
     GetHelp
-
-..  toctree::
-    :hidden:
-
     Sitemap
+    Contact/Index
 
 ..  note::
     * **Purpose**: Enables TYPO3 to send emails through Microsoft Exchange 365 using Graph API instead of SMTP
@@ -67,6 +64,9 @@ Microsoft Exchange 365 Mailer
 
     ..  card:: Installation
 
+        ..  card-image:: /Images/Icons/installation.svg
+            :alt: Download arrow icon
+
         Explains how to install this extension in Composer-based and Classic
         TYPO3 installations.
 
@@ -74,6 +74,9 @@ Microsoft Exchange 365 Mailer
             :button-style: btn btn-primary
 
     ..  card:: Microsoft Entra ID
+
+        ..  card-image:: /Images/Icons/azure.svg
+            :alt: Cloud with key icon
 
         Learn how to configure Microsoft Entra ID (formerly Microsoft AD) for
         this extension.
@@ -83,12 +86,18 @@ Microsoft Exchange 365 Mailer
 
     ..  card:: Configuration
 
+        ..  card-image:: /Images/Icons/configuration.svg
+            :alt: Settings sliders icon
+
         Learn how to configure this extension for backend and frontend mail.
 
         ..  card-footer:: :ref:`Configure <configuration>`
             :button-style: btn btn-primary
 
     ..  card:: FAQ
+
+        ..  card-image:: /Images/Icons/faq.svg
+            :alt: Question mark icon
 
         Answers to questions that have been frequently asked.
 
@@ -97,7 +106,20 @@ Microsoft Exchange 365 Mailer
 
     ..  card:: How to get help
 
+        ..  card-image:: /Images/Icons/help.svg
+            :alt: Lifebuoy icon
+
         Learn where to get help and how to report issues you found.
 
         ..  card-footer:: :ref:`Get help <help>`
+            :button-style: btn btn-primary
+
+    ..  card:: Contact
+
+        ..  card-image:: /Images/Icons/contact.svg
+            :alt: Envelope icon
+
+        Get in touch with the author for support, questions, or contributions.
+
+        ..  card-footer:: :ref:`Get in touch <contact>`
             :button-style: btn btn-primary

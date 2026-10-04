@@ -12,8 +12,13 @@ TYPO3 11.5 and PHP via `microsoft/microsoft-graph: ^2`.
 
 ## Commands
 
-There is no test suite, linter, or composer build step configured. The only tooling is
-documentation rendering (requires Docker):
+Tests live in `Tests/Unit` and `Tests/Functional` (configs in `Build/phpunit/`, PHPStan and
+php-cs-fixer configs in `Build/`). They are run by the cross-version **test matrix on the
+`main` branch** (`make test-matrix` / `make test-matrix-live` there), which mounts this branch
+as a git worktree into a TYPO3 11.5 DDEV lab and also performs real Microsoft Graph sends.
+Test methods use plain `testFoo()` names — no attributes or data providers.
+
+Documentation rendering (requires Docker):
 
 ```bash
 make docs        # render Documentation/ to Documentation-GENERATED-temp via the TYPO3 render-guides Docker image
@@ -21,8 +26,9 @@ make docs-fast   # same, without pulling a fresh image
 make help        # list make targets
 ```
 
-Version lives in **both** `composer.json` and `ext_emconf.php` — keep them in sync when bumping
-(the `/typo3-bump-version` skill does both).
+Version lives in `composer.json`, `ext_emconf.php`, the README badge and
+`Documentation/guides.xml` — keep them in sync when bumping. Tags are pushed through the release
+gate on `main` (`make install-hooks`), which refuses a tag unless the matrix is green.
 
 ## Architecture
 
@@ -32,40 +38,54 @@ The extension is intentionally tiny — three moving parts:
    `AbstractTransport`. `doSend()` resolves credentials, converts the Symfony message to Graph
    format via `MSGraphMailApiService::convertToGraphMessage()` (from the
    `oliverkroener/ok-typo3-helper` dependency), and POSTs through `GraphServiceClient`.
-   - **Config resolution order in `doSend()`:** it first tries frontend TypoScript
-     (`$GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.']`),
-     and falls back to the `MAIL` transport settings array (keys `transport_exchange365_*`).
+   - **Config resolution (`getConfiguration()`):** the `MAIL` transport settings (keys
+     `transport_exchange365_*`) are the baseline in every context. Frontend TypoScript
+     (`$GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_okexchange365mailer.']['settings.']['exchange365.']`)
+     overlays them **per key**; an empty TypoScript value falls back (except `saveToSentItems`).
+     `validateConfiguration()` requires tenantId, clientId and clientSecret.
    - **`graphSenderUserId` vs `fromEmail`:** the Graph mailbox the API call targets is resolved
      *separately* from the message From address, to support Send As / Send On Behalf. Resolution:
-     `graphSenderUserId` → message From → `fromEmail` → `MAIL.defaultMailFromAddress`. Empty
-     strings count as unset (uses `!empty()`, not `??`).
+     `graphSenderUserId` → message From → `fromEmail` → `MAIL.defaultMailFromAddress`, in
+     `resolveGraphSenderUserId()`. Empty strings count as unset at every step.
    - It is **excluded from autowiring** in `Configuration/Services.yaml` because TYPO3
      instantiates transports itself (passing the `$mailSettings` array), not the DI container.
-   - Contains a TYPO3-11-only shim: it wraps the event dispatcher in
-     `EventDispatcherAdapter` (marked `TODO remove if support for TYPO3 11 dropped`).
+   - **Graph client:** `getGraphServiceClient()` keeps one client (and its OAuth token) per
+     credential set. `createGraphServiceClient()` (protected — the test seam) sets 10 s connect /
+     30 s total timeouts on the Graph call *and* the OAuth token request; the latter needs an
+     injected `httpClient`, because the OAuth library otherwise uses no timeout at all. A request
+     that stalled after connecting is deliberately not retried (duplicate mails).
+   - **Errors:** `doSend()` catches `\Throwable`, logs at `error`, rethrows Symfony
+     `TransportException` (a `\RuntimeException`) with the original as `previous`.
+   - TYPO3-11 specific: Symfony Mailer 5 needs a Symfony dispatcher, so a passed PSR-14
+     dispatcher is wrapped in `EventDispatcherAdapter`; without one the adapter comes from
+     `GeneralUtility::makeInstance()`.
 
 2. **`Classes/Hook/BlindedConfigurationOptionsHook.php`** — masks the client ID / tenant ID /
    secret in the backend *Configuration* lowlevel module so credentials aren't shown in plain
    text. Registered in `ext_localconf.php` **only when TYPO3 major version < 12** (the hook API
-   changed in v12).
+   changed in v12). Covers `TYPO3_CONF_VARS` only.
 
 3. **TypoScript config** (`Configuration/TypoScript/`) — `constants.typoscript` exposes the
    six settings (tenantId, clientId, clientSecret, fromEmail, graphSenderUserId,
    saveToSentItems) in the constant editor; `setup.typoscript` maps them into
-   `plugin.tx_okexchange365mailer.settings.exchange365.*`. This is the *frontend* config path
-   read by `doSend()`. Registered as a static template via `Configuration/TCA/Overrides/sys_template.php`.
+   `plugin.tx_okexchange365mailer.settings.exchange365.*`. This is the *frontend* overlay. The
+   credential constants default to **empty** on purpose (only `saveToSentItems` defaults to 1): a non-empty default would override
+   `TYPO3_CONF_VARS` in the frontend. Registered as a static template via `Configuration/TCA/Overrides/sys_template.php`.
 
 ### Two ways the extension is configured (important)
 
 - **Global / backend mail** (most setups): `$GLOBALS['TYPO3_CONF_VARS']['MAIL']` keys —
   `transport` set to the transport FQCN plus `transport_exchange365_tenantId`, `_clientId`,
   `_clientSecret`, `_fromEmail`, `_graphSenderUserId`, `_saveToSentItems`. Can be set via
-  `TYPO3_CONF_VARS__MAIL__...` env vars or in `config/system/settings.php`.
-- **Frontend** (e.g. Powermail): `config.mail.transport = ...\Exchange365Transport` plus the
-  TypoScript `plugin.tx_okexchange365mailer.settings.exchange365.*` constants.
+  `TYPO3_CONF_VARS__MAIL__...` env vars (the project must map those itself — TYPO3 does not)
+  or in `public/typo3conf/AdditionalConfiguration.php`.
+- **Frontend overrides** (optional, e.g. per site): the TypoScript
+  `plugin.tx_okexchange365mailer.settings.exchange365.*` values, ideally `:= getEnv(VAR)`.
+  The transport itself can only be selected in `TYPO3_CONF_VARS` — there is no
+  `config.mail.transport` in TYPO3.
 
-When changing config keys, update **all** of: `constants.typoscript`, `setup.typoscript`, the
-fallback reads in `Exchange365Transport::doSend()`, and `Documentation/Configuration/*.rst`.
+When changing config keys, update **all** of: `constants.typoscript`, `setup.typoscript`,
+`Exchange365Transport::getMailSettingsConfiguration()`, and `Documentation/Configuration/*.rst`.
 
 ## Conventions
 
