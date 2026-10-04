@@ -45,7 +45,11 @@ Two rules encoded in `getConfiguration()` that must survive refactors:
 conf.graphSenderUserId → $graphMessage['from'] → conf.fromEmail → MAIL.defaultMailFromAddress → RuntimeException
 ```
 
-`!empty()` is used instead of `??` throughout, because `getMailSettingsConfiguration()` returns empty strings (not nulls) for unset values.
+This lives in `resolveGraphSenderUserId()`: the first candidate that is a non-empty scalar wins. An empty string counts as "unset" at every step (including an empty message `From`), because `getMailSettingsConfiguration()` returns empty strings (not nulls) for unset values.
+
+### Graph client, timeouts, retries
+
+`getGraphServiceClient()` keeps **one** `GraphServiceClient` per credential set (hash of tenant/client/secret) so a request sending several mails fetches one OAuth token. `createGraphServiceClient()` (protected — the test seam) mirrors the SDK's default construction but sets **10 s connect / 30 s total** on both the Graph call and the OAuth token request. The token request needs an injected `httpClient` for that: League's `GenericProvider` otherwise uses **no timeout at all**, which hung a CLI run indefinitely. 429/503/504 are retried by the SDK middleware; a request that stalled *after connecting* is deliberately **not** retried — Graph may already have accepted the mail.
 
 ### Why the `(string)` casts exist
 
@@ -67,7 +71,8 @@ The set's labels are inline English strings in `settings.definitions.yaml`. TYPO
 ## Important Behavior
 
 - **Sender display name**: Graph uses the **Display name** configured on the mailbox in Exchange Online. `MAIL.defaultMailFromName` / `defaultMailFromAddress` have **no effect** on the name recipients see; it must be changed in the Microsoft 365 / Exchange Admin Center.
-- **Errors are wrapped**: `doSend()` catches everything, logs at `alert` level, and rethrows a `\RuntimeException`. Graph's original message is appended to the text — keep it, it is the only diagnostic integrators get.
+- **Errors are wrapped**: `doSend()` catches every `\Throwable`, logs at `error` level, and rethrows a Symfony `TransportException` (which extends `\RuntimeException`, so old catch blocks still work) with the original as `previous`. Graph's original message is appended to the text — keep it, it is the only diagnostic integrators get.
+- **Blinding covers two providers**: `confVars` (`TYPO3_CONF_VARS.MAIL`) and `sitesYamlConfiguration` (the same three credentials in a site's settings, nested or dotted keys). The listener needs `SiteFinder` injected.
 
 ## Dependencies
 
@@ -136,5 +141,14 @@ The version appears in five places and they drift easily. Find them all with `gr
 - `README.md` → the version badge URL
 - `Documentation/guides.xml` → `release="…"`
 - `Documentation/**/*.rst` → any `..  versionadded::` directive (currently `Configuration/SiteSets.rst`)
+- on a minor bump also the `4.x.x` rows in `README.md` and `Documentation/Compatibility.rst`, and the `^4.x` pin example there
+
+**Tags go through the release gate.** After `make install-hooks`, pushing a tag runs the test matrix (with live Graph sends when `~/.config/ok-ex365/test.env` exists) for every TYPO3 major of the tag's branch and refuses the push unless it is green. The checkout under test must be clean and exactly at the tag — `main` is this working tree, the legacy branches are the worktrees under `~/.cache/ok-ex365-labs/worktrees/`. Push branch and tag together so nothing untested reaches the remote:
+
+```bash
+git tag 4.4.0 main && git push origin main refs/tags/4.4.0     # main: ~15-20 min for v12/v13/v14
+```
+
+While a gated push runs, do not edit that checkout — use a temporary `git worktree` for unrelated changes.
 
 The `typo3-toolkit:typo3-bump-version` skill exists to keep these in sync. Note that `composer validate` warns about the `version` field being present — that is intentional here for TER/`ext_emconf.php` parity, not something to "fix".

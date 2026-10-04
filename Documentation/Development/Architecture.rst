@@ -26,11 +26,14 @@ Components
 
     *   -   :php:`Mail\Transport\Exchange365Transport`
         -   Symfony :php:`AbstractTransport` implementation. Resolves configuration,
-            authenticates, converts the message and calls Microsoft Graph.
+            authenticates, converts the message and calls Microsoft Graph. Keeps one
+            Graph client per credential set — see :ref:`architecture-graph-client`.
     *   -   :php:`Lowlevel\EventListener\ModifyBlindedConfigurationOptionsEventListener`
-        -   Blinds ``transport_exchange365_tenantId``, ``…_clientId`` and
-            ``…_clientSecret`` in the backend :guilabel:`Configuration` module, so the
-            values render as ``ab******yz``.
+        -   Blinds the tenant ID, client ID and client secret in the backend
+            :guilabel:`Configuration` module, so the values render as ``ab******yz``.
+            Covers both ``$GLOBALS['TYPO3_CONF_VARS']['MAIL']`` (provider
+            ``confVars``) and the same settings in a site's configuration (provider
+            ``sitesYamlConfiguration``, nested or dotted keys).
 
 Message conversion itself lives in
 :composer:`oliverkroener/ok-typo3-helper`, whose
@@ -122,8 +125,10 @@ deliberately decoupled from the message ``From`` header, so that *Send As* and
           → MAIL.defaultMailFromAddress
             → RuntimeException
 
-:php:`!empty()` is used throughout rather than :php:`??`, because
-:php:`getMailSettingsConfiguration()` returns empty strings — not nulls — for unset
+:php:`resolveGraphSenderUserId()` walks these candidates and returns the first one
+that is a non-empty scalar. An empty string counts as "unset" at **every** step —
+including an empty message ``From`` — because
+:php:`getMailSettingsConfiguration()` returns empty strings, not nulls, for unset
 values.
 
 ..  note::
@@ -167,11 +172,44 @@ When adding or renaming a setting, change all four places:
 :file:`constants.typoscript`, :file:`setup.typoscript`,
 :file:`settings.definitions.yaml`, and :php:`getMailSettingsConfiguration()`.
 
+..  _architecture-graph-client:
+
+Graph client, timeouts and retries
+==================================
+
+:php:`getGraphServiceClient()` keeps **one** :php:`GraphServiceClient` per
+credential set (keyed by a hash of tenant ID, client ID and client secret). The
+client holds its OAuth token in memory, so a request that sends several mails — a
+form with a receiver and a confirmation mail, a scheduler run — authenticates once.
+Different credentials, for example a frontend site with its own app registration,
+get their own client.
+
+:php:`createGraphServiceClient()` builds the client the same way the SDK does by
+default, with two deliberate differences:
+
+*   **The Graph call** uses a 10 s connect and 30 s total timeout instead of the
+    SDK's 30 s / 100 s, so a stalled connection cannot hold a frontend request for
+    minutes.
+*   **The OAuth token request** gets the same timeouts through an injected HTTP
+    client. The OAuth library the SDK uses otherwise sends it with **no timeout at
+    all** — a stalled token request would block a CLI or scheduler run forever.
+
+Throttling (429) and 503/504 responses are retried by the SDK's own middleware,
+honouring ``Retry-After``. A request that **stalled after connecting is not
+retried**: Graph may already have accepted the message, and a retry could send it
+twice.
+
+:php:`createGraphServiceClient()` is :php:`protected` and is the one seam the unit
+tests use to count or replace client creation.
+
 ..  _architecture-errors:
 
 Error handling
 ==============
 
-:php:`doSend()` catches everything, logs at ``alert`` level, and rethrows a
-:php:`\RuntimeException`. Graph's original message is appended to the exception text
-— it is the only diagnostic an integrator gets, so keep it when editing.
+:php:`doSend()` catches every :php:`\Throwable`, logs at ``error`` level, and
+rethrows a Symfony :php:`TransportException` with the original as ``previous``.
+:php:`TransportException` extends :php:`\RuntimeException`, so existing
+``catch (\RuntimeException)`` blocks keep working. Graph's original message is
+appended to the exception text — it is the only diagnostic an integrator gets, so
+keep it when editing. The client secret and the token never appear in it.
