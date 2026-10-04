@@ -1,3 +1,5 @@
+..  include:: /Includes.rst.txt
+
 :navigation-title: 
     Exchange 365 Mailer
     
@@ -43,8 +45,8 @@ Microsoft Exchange 365 Mailer
     Configuration/Index
     Faq
     GetHelp
-    Contact/Index
     Sitemap
+    Contact/Index
 
 ..  note::
     * **Purpose**: Enables TYPO3 to send emails through Microsoft Exchange 365 using Graph API instead of SMTP
@@ -62,6 +64,9 @@ Microsoft Exchange 365 Mailer
 
     ..  card:: Installation
 
+        ..  card-image:: /Images/Icons/installation.svg
+            :alt: Download arrow icon
+
         Explains how to install this extension in Composer-based and Classic
         TYPO3 installations.
 
@@ -69,6 +74,9 @@ Microsoft Exchange 365 Mailer
             :button-style: btn btn-primary
 
     ..  card:: Microsoft Entra ID
+
+        ..  card-image:: /Images/Icons/azure.svg
+            :alt: Cloud with key icon
 
         Learn how to configure Microsoft Entra ID (formerly Azure AD) for this
         extension.
@@ -78,12 +86,18 @@ Microsoft Exchange 365 Mailer
 
     ..  card:: Configuration
 
+        ..  card-image:: /Images/Icons/configuration.svg
+            :alt: Settings sliders icon
+
         Learn how to configure this extension for backend and frontend email.
 
         ..  card-footer:: :ref:`Configure <configuration>`
             :button-style: btn btn-primary
 
     ..  card:: FAQ
+
+        ..  card-image:: /Images/Icons/faq.svg
+            :alt: Question mark icon
 
         Answers to frequently asked questions about this extension.
 
@@ -92,12 +106,18 @@ Microsoft Exchange 365 Mailer
 
     ..  card:: Get Help
 
+        ..  card-image:: /Images/Icons/help.svg
+            :alt: Lifebuoy icon
+
         Learn where to get help and how to report issues you found.
 
         ..  card-footer:: :ref:`Get help <help>`
             :button-style: btn btn-primary
 
     ..  card:: Contact
+
+        ..  card-image:: /Images/Icons/contact.svg
+            :alt: Envelope icon
 
         Get in touch with the author for support, questions, or contributions.
 

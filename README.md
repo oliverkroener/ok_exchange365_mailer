@@ -13,6 +13,9 @@ A TYPO3 mail transport that sends emails through **Microsoft Exchange 365 / Micr
 - **OAuth 2.0 (client credentials)** — token-based authentication against Microsoft Entra ID; no mailbox passwords stored in TYPO3.
 - **Backend and frontend support** — works for TYPO3 system mail (`$GLOBALS['TYPO3_CONF_VARS']['MAIL']`) and for frontend forms (Powermail, Form Framework); TypoScript can override the settings per site.
 - **Credential blinding** — client ID, tenant ID and client secret from `TYPO3_CONF_VARS` are masked in *System > Configuration* (lowlevel module hook).
+- **Secrets from the environment** — credentials can be read in TypoScript with `:= getEnv(...)`, so no secret has to be written into a template.
+- **Robust delivery** — the OAuth token is cached per credential set, requests use 10 s connect / 30 s total timeouts, throttling (429/503/504) is retried once honouring `Retry-After`, and a stalled connection is not retried, so a mail is never sent twice.
+- **Tested in a real TYPO3 10.4** — unit and functional tests plus live Microsoft Graph sends, see [Testing](#testing).
 - **Send As / Send On Behalf** — an optional `graphSenderUserId` targets a different Graph mailbox than the visible `From` address.
 - **Drop-in transport** — registers as a Symfony Mailer transport; existing `MailMessage` code keeps working unchanged.
 
