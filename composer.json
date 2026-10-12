@@ -58,7 +58,12 @@
     },
     "extra": {
         "typo3/cms": {
-            "extension-key": "ok_exchange365_mailer"
+            "extension-key": "ok_exchange365_mailer",
+            "Package": {
+                "providesPackages": {
+                    "microsoft/microsoft-graph": ""
+                }
+            }
         }
     }
 }
