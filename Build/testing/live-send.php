@@ -45,7 +45,7 @@ if (is_file($coreEmconf) && preg_match("/'version' => '(\\d+)\\./", (string)file
 \TYPO3\CMS\Core\Core\Bootstrap::init($classLoader);
 
 $transport = $GLOBALS['TYPO3_CONF_VARS']['MAIL']['transport'] ?? '';
-if (strpos((string)$transport, 'Exchange365Transport') === false) {
+if (!str_contains((string)$transport, 'Exchange365Transport')) {
     fwrite(STDERR, "live-send: MAIL.transport is '{$transport}', not the Exchange365 transport\n");
     exit(1);
 }

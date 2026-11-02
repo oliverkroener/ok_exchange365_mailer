@@ -58,7 +58,7 @@ abstract class AbstractTransportTestCase extends UnitTestCase
      */
     protected function createSubject(array $mailSettings): Exchange365Transport
     {
-        $psrDispatcher = new class implements EventDispatcherInterface {
+        $psrDispatcher = new class () implements EventDispatcherInterface {
             public function dispatch(object $event): object
             {
                 return $event;

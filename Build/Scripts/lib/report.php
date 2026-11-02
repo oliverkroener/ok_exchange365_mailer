@@ -7,7 +7,6 @@ declare(strict_types=1);
  *
  * Row format: major \t layer \t status \t detail
  */
-
 $rowsFile = $argv[1] ?? '';
 $matrixFile = getenv('MATRIX_FILE') ?: '';
 $runId = getenv('RUN_ID') ?: 'unknown';
@@ -139,7 +138,7 @@ $out[] = 'OK = passed · FAIL = failed · SKIP = not run, reason below · – = 
 $out[] = '';
 
 // findings
-$findings = array_values(array_filter($rows, static fn (array $r): bool => $r['status'] === 'fail'));
+$findings = array_values(array_filter($rows, static fn(array $r): bool => $r['status'] === 'fail'));
 if ($findings !== []) {
     $out[] = '## Findings';
     $out[] = '';
@@ -158,7 +157,7 @@ if ($findings !== []) {
 }
 
 // skips always carry a reason
-$skips = array_values(array_filter($rows, static fn (array $r): bool => $r['status'] === 'skip'));
+$skips = array_values(array_filter($rows, static fn(array $r): bool => $r['status'] === 'skip'));
 if ($skips !== []) {
     $out[] = '## Skipped';
     $out[] = '';
