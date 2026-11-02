@@ -35,7 +35,7 @@ final class Exchange365TransportSendTest extends AbstractTransportTestCase
      */
     private function createCountingSubject(array $mailSettings = []): Exchange365Transport
     {
-        $dispatcher = new class () implements EventDispatcherInterface {
+        $dispatcher = new class implements EventDispatcherInterface {
             public function dispatch(object $event): object
             {
                 return $event;
@@ -94,7 +94,7 @@ final class Exchange365TransportSendTest extends AbstractTransportTestCase
 
     public function testErrorsAreWrappedEvenWhenTheyAreNotExceptions(): void
     {
-        $dispatcher = new class () implements EventDispatcherInterface {
+        $dispatcher = new class implements EventDispatcherInterface {
             public function dispatch(object $event): object
             {
                 return $event;
